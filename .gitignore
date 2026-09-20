@@ -126,6 +126,7 @@ client/public/__manus__/
 drizzle/0*.sql
 drizzle/meta/
 drizzle/relations.ts
+legacy-drizzle-mysql/
 server/_core/*
 !server/_core/context.ts
 !server/_core/env.ts
