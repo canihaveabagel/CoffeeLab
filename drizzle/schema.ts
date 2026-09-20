@@ -25,7 +25,7 @@ export const users = sqliteTable(
     name: text("name"),
     email: text("email"),
     loginMethod: text("loginMethod"),
-    role: text("role", { enum: ["user", "admin"] }).notNull().default("user"),
+    role: text("role", { enum: ["user", "admin"] }).notNull(),
     school: text("school"),
     major: text("major"),
     classYear: text("classYear"),
@@ -79,9 +79,7 @@ export const contacts = sqliteTable(
         "following_up",
         "closed",
       ],
-    })
-      .notNull()
-      .default("not_started"),
+    }).notNull(),
     isDemo: integer("isDemo", { mode: "boolean" }).notNull().default(false),
     lastContactedAt: integer("lastContactedAt", { mode: "timestamp" }),
     createdAt: createdAt(),
@@ -112,7 +110,7 @@ export const coffeeChats = sqliteTable(
     audioFileUrl: text("audioFileUrl"),
     transcriptionStatus: text("transcriptionStatus", {
       enum: ["pending", "processing", "done", "error"],
-    }).default("pending"),
+    }).notNull(),
     notes: text("notes"),
     isDemo: integer("isDemo", { mode: "boolean" }).notNull().default(false),
     createdAt: createdAt(),
@@ -184,8 +182,7 @@ export const emailDrafts = sqliteTable(
     subject: text("subject"),
     body: text("body").notNull(),
     status: text("status", { enum: ["draft", "approved", "sent"] })
-      .notNull()
-      .default("draft"),
+      .notNull(),
     isDemo: integer("isDemo", { mode: "boolean" }).notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -211,13 +208,10 @@ export const recommendations = sqliteTable(
       .references(() => contacts.id, { onDelete: "cascade" }),
     reason: text("reason").notNull(),
     priority: text("priority", { enum: ["high", "medium", "low"] })
-      .notNull()
-      .default("medium"),
+      .notNull(),
     sourceType: text("sourceType", {
       enum: ["gap_analysis", "mentioned_in_chat", "strong_background"],
-    })
-      .notNull()
-      .default("gap_analysis"),
+    }).notNull(),
     sourceChatId: integer("sourceChatId").references(() => coffeeChats.id, {
       onDelete: "set null",
     }),

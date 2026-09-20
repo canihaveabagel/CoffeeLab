@@ -15,6 +15,7 @@ import {
   InsertRecruitingTimeline,
   Recommendation,
   Takeaway,
+  User,
   coffeeChats,
   contacts,
   emailDrafts,
@@ -159,7 +160,9 @@ export async function getDb() {
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
-export async function upsertUser(user: InsertUser): Promise<void> {
+export async function upsertUser(
+  user: Omit<InsertUser, "role"> & { role?: User["role"] },
+): Promise<void> {
   if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
   try {
@@ -305,7 +308,9 @@ export async function getContact(id: number, userId: number) {
   return result[0];
 }
 
-export async function createContact(data: InsertContact) {
+export async function createContact(
+  data: Omit<InsertContact, "status"> & { status?: Contact["status"] },
+) {
   const db = await getDb();
   const result = await db
     .insert(contacts)
@@ -334,7 +339,9 @@ export async function deleteAllContacts(userId: number) {
   await db.delete(contacts).where(eq(contacts.userId, userId));
 }
 
-export async function bulkInsertContacts(data: InsertContact[]) {
+export async function bulkInsertContacts(
+  data: Array<Omit<InsertContact, "status"> & { status?: Contact["status"] }>,
+) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   if (data.length === 0) return;
@@ -389,7 +396,11 @@ export async function getCoffeeChat(id: number, userId: number) {
   return result[0];
 }
 
-export async function createCoffeeChat(data: InsertCoffeeChat) {
+export async function createCoffeeChat(
+  data: Omit<InsertCoffeeChat, "transcriptionStatus"> & {
+    transcriptionStatus?: CoffeeChat["transcriptionStatus"];
+  },
+) {
   const db = await getDb();
   const result = await db
     .insert(coffeeChats)
@@ -491,7 +502,7 @@ export async function createEmailDraft(data: InsertEmailDraft) {
   const db = await getDb();
   const result = await db
     .insert(emailDrafts)
-    .values({ status: "draft", ...data })
+    .values(data)
     .returning({ id: emailDrafts.id });
   return { insertId: result[0]?.id ?? 0 };
 }
@@ -537,13 +548,7 @@ export async function bulkInsertRecommendations(data: InsertRecommendation[]) {
   if (!db) throw new Error("DB unavailable");
   if (data.length === 0) return;
   await db.delete(recommendations).where(eq(recommendations.userId, data[0]!.userId));
-  await db.insert(recommendations).values(
-    data.map(row => ({
-      priority: "medium" as const,
-      sourceType: "gap_analysis" as const,
-      ...row,
-    })),
-  );
+  await db.insert(recommendations).values(data);
 }
 
 // ─── Recruiting Timelines ─────────────────────────────────────────────────────
