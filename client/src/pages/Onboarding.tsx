@@ -29,6 +29,7 @@ const REGIONS = [
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
   const [step, setStep] = useState(1);
   const { data: profile } = trpc.user.getProfile.useQuery();
   const [schoolChoice, setSchoolChoice] = useState("");
@@ -60,7 +61,8 @@ export default function Onboarding() {
   }, [profile]);
 
   const updateMutation = trpc.user.updateBackground.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      await utils.user.getProfile.invalidate();
       toast.success("Profile saved! Welcome to CoffeeLab.");
       setLocation("/");
     },
