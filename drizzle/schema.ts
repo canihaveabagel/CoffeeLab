@@ -37,6 +37,9 @@ export const users = sqliteTable(
       enum: ["investment_banking", "venture_capital", "consulting"],
     }),
     recruitingSeason: text("recruitingSeason"),
+    recruitingRegion: text("recruitingRegion", {
+      enum: ["us", "uk", "europe", "hong_kong", "other"],
+    }),
     onboardingCompleted: integer("onboardingCompleted", { mode: "boolean" })
       .notNull()
       .default(false),

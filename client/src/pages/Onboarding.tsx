@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { DoodleCoffeeCup, DoodleSparkle } from "@/components/DoodleIcons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -10,12 +10,28 @@ const INDUSTRIES = [
   { value: "consulting", label: "Consulting", emoji: "📊" },
 ] as const;
 
-const CLASS_YEARS = ["2025", "2026", "2027", "2028", "2029"];
-const SEASONS = ["Summer 2025", "Summer 2026", "Summer 2027", "Summer 2028", "Full-Time 2025", "Full-Time 2026", "Full-Time 2027"];
+const CLASS_YEARS = ["2026", "2027", "2028", "2029", "2030", "2031"];
+const RECRUITING_YEARS = ["Summer 2027", "Summer 2028", "Summer 2029", "Summer 2030", "Full-Time 2027", "Full-Time 2028", "Full-Time 2029"];
+const SCHOOLS = [
+  "University of Pennsylvania", "New York University", "Columbia University",
+  "Harvard University", "Cornell University", "University of Michigan",
+  "University of Chicago", "University of California, Berkeley",
+  "University of Southern California", "London School of Economics",
+  "University of Oxford", "University of Cambridge", "Other",
+];
+const REGIONS = [
+  { value: "us", label: "United States", note: "US Finance + Tech" },
+  { value: "uk", label: "United Kingdom", note: "UK Finance + Spring Weeks" },
+  { value: "europe", label: "Continental Europe", note: "France, Germany, Italy" },
+  { value: "hong_kong", label: "Hong Kong / APAC", note: "Hong Kong Finance" },
+  { value: "other", label: "Other / Multiple", note: "Browse all Trackr regions" },
+] as const;
 
 export default function Onboarding() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
+  const { data: profile } = trpc.user.getProfile.useQuery();
+  const [schoolChoice, setSchoolChoice] = useState("");
   const [form, setForm] = useState({
     name: "",
     school: "",
@@ -25,9 +41,23 @@ export default function Onboarding() {
     club: "",
     targetIndustry: "" as "investment_banking" | "venture_capital" | "consulting" | "",
     recruitingSeason: "",
+    recruitingRegion: "" as "us" | "uk" | "europe" | "hong_kong" | "other" | "",
     targetFirm: "",
     targetGroup: "",
   });
+
+  useEffect(() => {
+    if (!profile) return;
+    setForm(current => ({
+      ...current,
+      name: current.name || profile.name || "",
+      school: current.school || profile.school || "",
+      classYear: current.classYear || profile.classYear || "",
+      recruitingSeason: current.recruitingSeason || profile.recruitingSeason || "",
+      recruitingRegion: current.recruitingRegion || profile.recruitingRegion || "",
+    }));
+    if (profile.school) setSchoolChoice(SCHOOLS.includes(profile.school) ? profile.school : "Other");
+  }, [profile]);
 
   const updateMutation = trpc.user.updateBackground.useMutation({
     onSuccess: () => {
@@ -42,11 +72,12 @@ export default function Onboarding() {
   }
 
   function handleSubmit() {
-    if (!form.school || !form.targetIndustry) {
-      toast.error("Please fill in your school and target industry.");
+    if (!form.name || !form.school || !form.targetIndustry || !form.recruitingRegion || !form.recruitingSeason) {
+      toast.error("Please complete the required profile and recruiting fields.");
       return;
     }
     updateMutation.mutate({
+      name: form.name || undefined,
       school: form.school || undefined,
       major: form.major || undefined,
       classYear: form.classYear || undefined,
@@ -54,6 +85,7 @@ export default function Onboarding() {
       club: form.club || undefined,
       targetIndustry: form.targetIndustry || undefined,
       recruitingSeason: form.recruitingSeason || undefined,
+      recruitingRegion: form.recruitingRegion || undefined,
       targetFirm: form.targetFirm || undefined,
       targetGroup: form.targetGroup || undefined,
       onboardingCompleted: true,
@@ -92,14 +124,22 @@ export default function Onboarding() {
 
               <div className="space-y-3">
                 <div>
+                  <label className="block text-xs font-semibold text-[var(--color-ink)] mb-1">Name *</label>
+                  <input type="text" placeholder="e.g. Rylee Lin" value={form.name} onChange={e => set("name", e.target.value)} className="sketch-input w-full text-sm" />
+                </div>
+                <div>
                   <label className="block text-xs font-semibold text-[var(--color-ink)] mb-1">School *</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. University of Pennsylvania"
-                    value={form.school}
-                    onChange={e => set("school", e.target.value)}
-                    className="sketch-input w-full text-sm"
-                  />
+                  <select value={schoolChoice} onChange={e => {
+                    const value = e.target.value;
+                    setSchoolChoice(value);
+                    set("school", value === "Other" ? "" : value);
+                  }} className="sketch-input w-full text-sm">
+                    <option value="">Select school</option>
+                    {SCHOOLS.map(school => <option key={school} value={school}>{school}</option>)}
+                  </select>
+                  {schoolChoice === "Other" && (
+                    <input type="text" placeholder="Type your school name" value={form.school} onChange={e => set("school", e.target.value)} className="sketch-input w-full text-sm mt-2" />
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -150,7 +190,7 @@ export default function Onboarding() {
 
               <button
                 onClick={() => {
-                  if (!form.school) { toast.error("School is required"); return; }
+                  if (!form.name || !form.school) { toast.error("Name and school are required"); return; }
                   setStep(2);
                 }}
                 className="sketch-btn sketch-btn-primary w-full"
@@ -192,15 +232,27 @@ export default function Onboarding() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[var(--color-ink)] mb-1">Recruiting Season</label>
+                  <label className="block text-xs font-semibold text-[var(--color-ink)] mb-1">Recruiting Year *</label>
                   <select
                     value={form.recruitingSeason}
                     onChange={e => set("recruitingSeason", e.target.value)}
                     className="sketch-input w-full text-sm"
                   >
-                    <option value="">Select season</option>
-                    {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
+                    <option value="">Select recruiting year</option>
+                    {RECRUITING_YEARS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[var(--color-ink)] mb-2">Recruiting Region *</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {REGIONS.map(region => (
+                      <button type="button" key={region.value} onClick={() => set("recruitingRegion", region.value)} className={`rounded-md border px-3 py-2 text-left transition-all ${form.recruitingRegion === region.value ? "border-[var(--color-ink)] bg-[var(--color-paper-dark)] shadow-[2px_2px_0_0_var(--color-ink)]" : "border-[var(--color-border-dark)] hover:border-[var(--color-ink-muted)]"}`}>
+                        <span className="block text-xs font-semibold">{region.label}</span>
+                        <span className="block text-[10px] text-[var(--color-ink-faint)]">{region.note}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -231,7 +283,7 @@ export default function Onboarding() {
                 <button onClick={() => setStep(1)} className="sketch-btn flex-1">← Back</button>
                 <button
                   onClick={() => {
-                    if (!form.targetIndustry) { toast.error("Please select a target industry"); return; }
+                    if (!form.targetIndustry || !form.recruitingSeason || !form.recruitingRegion) { toast.error("Select an industry, recruiting year, and region"); return; }
                     setStep(3);
                   }}
                   className="sketch-btn sketch-btn-primary flex-1"
@@ -254,6 +306,7 @@ export default function Onboarding() {
 
               <div className="sketch-card p-4 space-y-2 bg-[var(--color-paper-dark)]">
                 {[
+                  ["Name", form.name],
                   ["School", form.school],
                   ["Major", form.major],
                   ["Class Year", form.classYear],
@@ -261,6 +314,7 @@ export default function Onboarding() {
                   ["Club", form.club],
                   ["Target Industry", INDUSTRIES.find(i => i.value === form.targetIndustry)?.label],
                   ["Recruiting Season", form.recruitingSeason],
+                  ["Recruiting Region", REGIONS.find(region => region.value === form.recruitingRegion)?.label],
                   ["Target Firm", form.targetFirm],
                   ["Target Group", form.targetGroup],
                 ].filter(([, v]) => v).map(([label, value]) => (
@@ -290,13 +344,7 @@ export default function Onboarding() {
         </div>
 
         <p className="text-center text-xs text-[var(--color-ink-faint)] mt-4">
-          You can skip this and set up your profile later in Settings.{" "}
-          <button
-            onClick={() => setLocation("/")}
-            className="underline hover:text-[var(--color-ink-muted)] transition-colors"
-          >
-            Skip for now
-          </button>
+          Your answers are stored privately and used to personalize your workspace.
         </p>
       </div>
     </div>

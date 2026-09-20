@@ -8,6 +8,6 @@ export const ENV = {
     return env.ANTHROPIC_API_KEY ?? "";
   },
   get anthropicModel() {
-    return env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
+    return env.ANTHROPIC_MODEL ?? "claude-sonnet-4-6";
   },
 };

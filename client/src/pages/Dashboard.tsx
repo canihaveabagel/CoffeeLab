@@ -9,12 +9,63 @@ import {
 import { trpc } from "@/lib/trpc";
 import { BANKING_GROUPS, STATUS_CLASSES, STATUS_LABELS } from "@/lib/types";
 import type { ContactStatus } from "@/lib/types";
-import { ArrowRight, ChevronRight, RefreshCw, ExternalLink } from "lucide-react";
+import { ArrowRight, ChevronRight, ExternalLink, MapPin } from "lucide-react";
 import { Link } from "wouter";
-import { useState } from "react";
-import { Streamdown } from "streamdown";
 import { useAuth } from "@/_core/hooks/useAuth";
 
+type RecruitingRegion = "us" | "uk" | "europe" | "hong_kong" | "other";
+const REGION_TIMELINES: Record<RecruitingRegion, { label: string; trackerUrl: string; guideUrl?: string; milestones: Array<{ period: string; action: string }>; extraLinks?: Array<{ label: string; url: string }> }> = {
+  us: {
+    label: "United States", trackerUrl: "https://app.the-trackr.com/us-finance", guideUrl: "https://the-trackr.com/blog/us-finance-summer-2028-timeline/",
+    milestones: [
+      { period: "Aug–Nov 2026", action: "Early Summer 2028 programs begin opening; finish your resume and networking list." },
+      { period: "December 2026", action: "The main banking wave begins, led by boutiques and middle-market firms." },
+      { period: "January 2027", action: "Peak month for US finance openings. Apply within days, not near the deadline." },
+      { period: "Spring–Summer 2027", action: "Later buy-side, accounting, and remaining programs continue to open." },
+    ],
+  },
+  uk: {
+    label: "United Kingdom", trackerUrl: "https://app.the-trackr.com/uk-finance", guideUrl: "https://the-trackr.com/blog/spring-week-timeline-2027-when-uk-finance-firms-open-applications/",
+    milestones: [
+      { period: "June–September", action: "The first spring weeks, insight programs, and select internships open." },
+      { period: "October–November", action: "Peak investment-banking wave; submit early because recruiting is rolling." },
+      { period: "January–February", action: "Consulting and trading programs cluster here; keep monitoring new openings." },
+      { period: "Through April", action: "The long-tail of spring and diversity programs continues." },
+    ],
+  },
+  europe: {
+    label: "Continental Europe", trackerUrl: "https://the-trackr.com/trackers/",
+    milestones: [
+      { period: "May–July", action: "Trackr generally resets trackers for the next recruiting cycle." },
+      { period: "Late summer", action: "Prepare local-language materials and begin checking country trackers." },
+      { period: "Autumn", action: "Monitor openings daily and apply as soon as each role goes live." },
+      { period: "Rolling", action: "Use the country tracker for live status, direct links, and current deadlines." },
+    ],
+    extraLinks: [
+      { label: "France", url: "https://app.the-trackr.com/france-finance" },
+      { label: "Germany", url: "https://app.the-trackr.com/germany-finance" },
+      { label: "Italy", url: "https://app.the-trackr.com/italy-finance" },
+    ],
+  },
+  hong_kong: {
+    label: "Hong Kong / APAC", trackerUrl: "https://app.the-trackr.com/hong-kong-finance",
+    milestones: [
+      { period: "May–July", action: "Prepare before the tracker resets for the next cycle." },
+      { period: "Late summer–autumn", action: "Watch the Hong Kong tracker closely as finance roles begin opening." },
+      { period: "When live", action: "Apply immediately and record the deadline in CoffeeLab." },
+      { period: "Rolling", action: "Recheck live status; openings and closings can change throughout the day." },
+    ],
+  },
+  other: {
+    label: "Multiple regions", trackerUrl: "https://the-trackr.com/trackers/",
+    milestones: [
+      { period: "May–July", action: "Most Trackr trackers reset for the following recruiting cycle." },
+      { period: "Weekly", action: "Review the relevant country and sector trackers for new openings." },
+      { period: "When live", action: "Prioritize rolling applications and submit as early as possible." },
+      { period: "Ongoing", action: "Update your region in Settings to receive a more specific timeline." },
+    ],
+  },
+};
 
 
 function StatCard({
@@ -58,27 +109,8 @@ export default function Dashboard() {
 
   // Recruiting timeline
   const { data: userProfile } = trpc.user.getProfile.useQuery();
-  const targetIndustry = (userProfile?.targetIndustry as string | null) ?? "investment_banking";
-  type TimelineIndustry = "investment_banking" | "venture_capital" | "consulting" | "private_equity" | "asset_management" | "sales_trading" | "quant_finance" | "corporate_finance" | "public_accounting" | "commercial_real_estate";
-  const TIMELINE_INDUSTRY_LABELS: Record<TimelineIndustry, string> = {
-    investment_banking: "Investment Banking",
-    venture_capital: "Venture Capital",
-    consulting: "Management Consulting",
-    private_equity: "Private Equity",
-    asset_management: "Asset Management",
-    sales_trading: "Sales & Trading",
-    quant_finance: "Quant Finance",
-    corporate_finance: "Corporate Finance / FLDP",
-    public_accounting: "Big 4 / Accounting",
-    commercial_real_estate: "Commercial Real Estate",
-  };
-  const [timelineIndustry, setTimelineIndustry] = useState<TimelineIndustry>("investment_banking");
-  const [timelineExpanded, setTimelineExpanded] = useState(false);
-  const { data: timeline, refetch: refetchTimeline } = trpc.timeline.get.useQuery({ industry: timelineIndustry });
-  const fetchTimelineMutation = trpc.timeline.fetch.useMutation({
-    onSuccess: () => refetchTimeline(),
-    onError: (e) => console.error("Timeline fetch failed:", e.message),
-  });
+  const recruitingRegion = (userProfile?.recruitingRegion as RecruitingRegion | null) ?? "other";
+  const regionalTimeline = REGION_TIMELINES[recruitingRegion];
 
   const topContacts = contactsData?.contacts ?? [];
   const coveredGroups = new Set(topContacts.map((c) => c.bankingGroup).filter(Boolean));
@@ -164,78 +196,33 @@ export default function Dashboard() {
             {/* Recruiting Timeline */}
             <div className="sketch-card overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border-dark)]">
-                <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
-                  <h2 className="text-sm font-semibold text-[var(--color-ink)] whitespace-nowrap flex-shrink-0">Recruiting Timeline</h2>
-                  <select
-                    value={timelineIndustry}
-                    onChange={e => setTimelineIndustry(e.target.value as typeof timelineIndustry)}
-                    className="sketch-input text-xs h-7 min-w-0 flex-1 max-w-[180px]"
-                  >
-                    {(Object.entries(TIMELINE_INDUSTRY_LABELS) as [TimelineIndustry, string][]).map(([val, label]) => (
-                      <option key={val} value={val}>{label}</option>
-                    ))}
-                  </select>
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-[var(--color-ink)]">Your Recruiting Timeline</h2>
+                  <p className="text-[10px] font-mono text-[var(--color-ink-faint)] mt-0.5">{regionalTimeline.label} · {userProfile?.recruitingSeason ?? "Set your recruiting year"}</p>
                 </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <button
-                    onClick={() => fetchTimelineMutation.mutate({ industry: timelineIndustry })}
-                    disabled={fetchTimelineMutation.isPending}
-                    className="sketch-btn text-xs"
-                    title="Fetch latest from web"
-                  >
-                    <RefreshCw size={11} className={fetchTimelineMutation.isPending ? "animate-spin" : ""} />
-                    {fetchTimelineMutation.isPending ? "Fetching..." : "Refresh"}
-                  </button>
-                  {timeline?.content && (
-                    <button
-                      onClick={() => setTimelineExpanded(e => !e)}
-                      className="sketch-btn text-xs"
-                    >
-                      {timelineExpanded ? "Collapse" : "Expand"}
-                    </button>
-                  )}
-                </div>
+                <Link href="/settings" className="text-[10px] font-mono underline text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]">Edit profile</Link>
               </div>
-              <div className={`p-4 transition-all duration-300 ease-out ${timeline?.content && !timelineExpanded ? "max-h-40 overflow-hidden" : "max-h-[480px] overflow-y-auto"}`}>
-                {timeline?.content ? (
-                  <div className="relative">
-                    <div className="prose prose-sm max-w-none text-[var(--color-ink-muted)] text-xs leading-relaxed">
-                      <Streamdown>{timeline.content}</Streamdown>
-                      {timeline.sourceUrl && (
-                        <a href={timeline.sourceUrl} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[10px] font-mono text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] mt-2">
-                          <ExternalLink size={10} /> Source
-                        </a>
-                      )}
+              <div className="p-4">
+                <div className="space-y-3">
+                  {regionalTimeline.milestones.map((milestone, index) => (
+                    <div key={milestone.period} className="grid grid-cols-[18px_110px_1fr] gap-2 items-start">
+                      <div className="relative flex justify-center pt-1">
+                        <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-ink)] block" />
+                        {index < regionalTimeline.milestones.length - 1 && <span className="absolute top-3.5 h-8 w-px bg-[var(--color-border-dark)]" />}
+                      </div>
+                      <span className="text-[10px] font-mono font-semibold text-[var(--color-ink)] pt-0.5">{milestone.period}</span>
+                      <span className="text-xs text-[var(--color-ink-muted)] leading-relaxed">{milestone.action}</span>
                     </div>
-                    {!timelineExpanded && (
-                      <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[var(--color-paper)] to-transparent pointer-events-none" />
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <p className="text-xs text-[var(--color-ink-faint)] font-mono mb-3">
-                      No timeline loaded yet. Click Refresh to fetch the latest recruiting timeline.
-                    </p>
-                    <button
-                      onClick={() => fetchTimelineMutation.mutate({ industry: timelineIndustry })}
-                      disabled={fetchTimelineMutation.isPending}
-                      className="sketch-btn sketch-btn-primary text-xs"
-                    >
-                      <RefreshCw size={11} className={fetchTimelineMutation.isPending ? "animate-spin" : ""} />
-                      {fetchTimelineMutation.isPending ? "Fetching timeline..." : "Fetch Recruiting Timeline"}
-                    </button>
-                  </div>
-                )}
+                  ))}
+                </div>
+                <div className="mt-4 pt-3 border-t border-[var(--color-border)] flex flex-wrap items-center gap-2">
+                  <MapPin size={11} className="text-[var(--color-ink-faint)]" />
+                  <a href={regionalTimeline.trackerUrl} target="_blank" rel="noopener noreferrer" className="sketch-btn sketch-btn-primary text-xs">Open live Trackr <ExternalLink size={10} /></a>
+                  {regionalTimeline.guideUrl && <a href={regionalTimeline.guideUrl} target="_blank" rel="noopener noreferrer" className="sketch-btn text-xs">View timeline guide <ExternalLink size={10} /></a>}
+                  {regionalTimeline.extraLinks?.map(link => <a key={link.label} href={link.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-mono underline text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]">{link.label}</a>)}
+                </div>
+                <p className="mt-2 text-[9px] text-[var(--color-ink-faint)]">Source: Trackr. Dates are planning estimates; use the live tracker for current openings and deadlines.</p>
               </div>
-              {timeline?.content && (
-                <button
-                  onClick={() => setTimelineExpanded(e => !e)}
-                  className="w-full py-2 text-[10px] font-mono text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] border-t border-[var(--color-border)] transition-colors"
-                >
-                  {timelineExpanded ? "Show less ↑" : "Show more ↓"}
-                </button>
-              )}
             </div>
 
             {/* Top contacts table */}

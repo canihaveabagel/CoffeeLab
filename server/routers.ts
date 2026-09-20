@@ -136,12 +136,12 @@ Return JSON: { "subject": "...", "body": "..." }`;
 }
 
 async function analyzeTakeaways(transcript: string): Promise<Array<{ category: string; content: string }>> {
-  const prompt = `You are an expert IB recruiting analyst. Analyze this coffee chat transcript and extract structured takeaways.
+  const prompt = `You are a meticulous recruiting note-taker. Extract only takeaways that are explicitly supported by this coffee chat transcript.
 
 TRANSCRIPT:
 ${transcript}
 
-Extract takeaways for EXACTLY these 8 categories (use the exact labels):
+Use only these exact category labels:
 1. Industry — insights about the industry, market trends, deal flow
 2. Firm — culture, reputation, recent deals, what makes this firm unique
 3. Group — specifics about the banking group (TMT, Healthcare, M&A, RX, ECM, DCM, LevFin, etc.)
@@ -151,11 +151,15 @@ Extract takeaways for EXACTLY these 8 categories (use the exact labels):
 7. Referral Signal — any indication they'd refer you, pass your resume, or champion you
 8. Next Person To Meet — specific names or roles they suggested you speak with
 
-For each category, write 2-4 SHORT bullet points (each bullet max 15 words). Use "• " prefix for each bullet.
-If nothing relevant for a category, write "• No specific insights from this conversation."
-Be concise and actionable — not paragraphs.
+Rules:
+- Omit categories with no meaningful evidence. Never add filler such as "no insights".
+- Keep each bullet under 22 words and preserve concrete names, dates, firms, groups, and next steps.
+- Separate facts from advice. Do not infer a referral signal unless the speaker clearly offered help.
+- Merge duplicates and keep the 1-3 strongest bullets per relevant category.
+- Use a "• " prefix for every bullet. No paragraphs.
+- Return at most 16 total bullets.
 
-Return JSON array: [{ "category": "Industry", "content": "• bullet 1\n• bullet 2" }, ...]`;
+Return one JSON object: { "takeaways": [{ "category": "Industry", "content": "• bullet 1\n• bullet 2" }] }`;
 
   const response = await invokeLLM({
     messages: [{ role: "user", content: prompt }],
@@ -189,8 +193,23 @@ Return JSON array: [{ "category": "Industry", "content": "• bullet 1\n• bull
 
   const _raw = response.choices[0]?.message?.content ?? "{}";
   const content = typeof _raw === "string" ? _raw : JSON.stringify(_raw);
-  const parsed = JSON.parse(typeof content === "string" ? content : JSON.stringify(content));
-  return parsed.takeaways ?? [];
+  const jsonText = typeof content === "string" ? content : JSON.stringify(content);
+  const objectStart = jsonText.indexOf("{");
+  const objectEnd = jsonText.lastIndexOf("}");
+  if (objectStart < 0 || objectEnd <= objectStart) {
+    throw new Error("The summary service returned an invalid response. Please try again.");
+  }
+  const parsed = JSON.parse(jsonText.slice(objectStart, objectEnd + 1)) as {
+    takeaways?: Array<{ category?: unknown; content?: unknown }>;
+  };
+  return (parsed.takeaways ?? [])
+    .filter(
+      (item): item is { category: string; content: string } =>
+        typeof item.category === "string" &&
+        typeof item.content === "string" &&
+        item.content.trim().length > 0,
+    )
+    .slice(0, 8);
 }
 
 async function generatePostChatEmail(
@@ -470,6 +489,7 @@ export const appRouter = router({
     }),
     updateBackground: protectedProcedure
       .input(z.object({
+        name: z.string().trim().min(1).max(120).optional(),
         school: z.string().optional(),
         major: z.string().optional(),
         hometown: z.string().optional(),
@@ -479,6 +499,7 @@ export const appRouter = router({
         classYear: z.string().optional(),
         targetIndustry: z.enum(["investment_banking", "venture_capital", "consulting"]).optional(),
         recruitingSeason: z.string().optional(),
+        recruitingRegion: z.enum(["us", "uk", "europe", "hong_kong", "other"]).optional(),
         onboardingCompleted: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -957,6 +978,7 @@ export const appRouter = router({
 
     updateProfile: protectedProcedure
       .input(z.object({
+        name: z.string().trim().min(1).max(120).optional(),
         school: z.string().optional(),
         major: z.string().optional(),
         hometown: z.string().optional(),
@@ -966,6 +988,7 @@ export const appRouter = router({
         classYear: z.string().optional(),
         targetIndustry: z.enum(["investment_banking", "venture_capital", "consulting"]).optional(),
         recruitingSeason: z.string().optional(),
+        recruitingRegion: z.enum(["us", "uk", "europe", "hong_kong", "other"]).optional(),
         onboardingCompleted: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {

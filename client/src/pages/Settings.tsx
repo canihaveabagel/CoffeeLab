@@ -14,23 +14,29 @@ export default function Settings() {
   const { data: profile } = trpc.settings.getProfile.useQuery();
 
   const [form, setForm] = useState({
+    name: "",
     school: "",
     major: "",
     club: "",
     hometown: "",
     targetGroup: "",
     targetFirm: "",
+    recruitingSeason: "",
+    recruitingRegion: "" as "us" | "uk" | "europe" | "hong_kong" | "other" | "",
   });
 
   useEffect(() => {
     if (profile) {
       setForm({
+        name: profile.name ?? "",
         school: profile.school ?? "",
         major: profile.major ?? "",
         club: profile.club ?? "",
         hometown: profile.hometown ?? "",
         targetGroup: profile.targetGroup ?? "",
         targetFirm: profile.targetFirm ?? "",
+        recruitingSeason: profile.recruitingSeason ?? "",
+        recruitingRegion: profile.recruitingRegion ?? "",
       });
     }
   }, [profile]);
@@ -71,7 +77,7 @@ export default function Settings() {
           <div className="space-y-2">
             <div className="flex justify-between items-center py-1.5 border-b border-[var(--color-border)]">
               <span className="text-xs font-mono text-[var(--color-ink-muted)]">Name</span>
-              <span className="text-xs font-semibold text-[var(--color-ink)]">{user?.name ?? "—"}</span>
+              <span className="text-xs font-semibold text-[var(--color-ink)]">{profile?.name ?? user?.name ?? "—"}</span>
             </div>
             <div className="flex justify-between items-center py-1.5 border-b border-[var(--color-border)]">
               <span className="text-xs font-mono text-[var(--color-ink-muted)]">Email</span>
@@ -97,6 +103,7 @@ export default function Settings() {
 
           <div className="grid grid-cols-2 gap-4">
             {[
+              { key: "name",     label: "Preferred Name",       placeholder: "e.g. Rylee Lin" },
               { key: "school",   label: "Your School",          placeholder: "e.g. Wharton, Stern, Ross" },
               { key: "major",    label: "Major / Concentration", placeholder: "e.g. Finance, Economics" },
               { key: "club",     label: "Club / Organization",   placeholder: "e.g. Investment Banking Club" },
@@ -135,11 +142,23 @@ export default function Settings() {
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-[var(--color-ink-muted)] mb-1.5">Recruiting Year</p>
+              <input value={form.recruitingSeason} onChange={set("recruitingSeason")} placeholder="e.g. Summer 2028" className="sketch-input w-full text-sm" />
+            </div>
+
+            <div>
+              <p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-[var(--color-ink-muted)] mb-1.5">Recruiting Region</p>
+              <select value={form.recruitingRegion} onChange={e => setForm(f => ({ ...f, recruitingRegion: e.target.value as typeof f.recruitingRegion }))} className="sketch-input w-full text-sm">
+                <option value="">Select region</option><option value="us">United States</option><option value="uk">United Kingdom</option><option value="europe">Continental Europe</option><option value="hong_kong">Hong Kong / APAC</option><option value="other">Other / Multiple</option>
+              </select>
+            </div>
           </div>
 
           <div className="mt-5 pt-4 border-t border-[var(--color-border)]">
             <button
-              onClick={() => updateMutation.mutate(form)}
+              onClick={() => updateMutation.mutate({ ...form, name: form.name || undefined, recruitingRegion: form.recruitingRegion || undefined })}
               disabled={updateMutation.isPending}
               className="sketch-btn sketch-btn-primary disabled:opacity-40"
             >

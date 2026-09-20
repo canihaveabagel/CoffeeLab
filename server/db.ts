@@ -44,6 +44,7 @@ const schemaStatements = [
     targetFirm TEXT,
     targetIndustry TEXT,
     recruitingSeason TEXT,
+    recruitingRegion TEXT,
     onboardingCompleted INTEGER NOT NULL DEFAULT 0,
     createdAt INTEGER NOT NULL DEFAULT (unixepoch()),
     updatedAt INTEGER NOT NULL DEFAULT (unixepoch()),
@@ -140,9 +141,18 @@ const schemaStatements = [
 
 async function ensureSchema() {
   if (!schemaReady) {
-    schemaReady = env.DB.batch(
-      schemaStatements.map((statement) => env.DB.prepare(statement)),
-    ).then(() => undefined);
+    schemaReady = (async () => {
+      await env.DB.batch(
+        schemaStatements.map((statement) => env.DB.prepare(statement)),
+      );
+      const columns = await env.DB.prepare("PRAGMA table_info(users)").all<{
+        name: string;
+      }>();
+      const columnNames = new Set(columns.results.map(column => column.name));
+      if (!columnNames.has("recruitingRegion")) {
+        await env.DB.prepare("ALTER TABLE users ADD COLUMN recruitingRegion TEXT").run();
+      }
+    })();
   }
   await schemaReady;
 }
@@ -171,7 +181,8 @@ export async function upsertUser(
       role: user.role ?? "user",
     };
     const updateSet: Partial<InsertUser> = {};
-    const textFields = ["name", "email", "loginMethod"] as const;
+    if (user.name !== undefined) values.name = user.name ?? null;
+    const textFields = ["email", "loginMethod"] as const;
     type TextField = (typeof textFields)[number];
     const assignNullable = (field: TextField) => {
       const value = user[field];
@@ -206,6 +217,7 @@ export async function getUserByOpenId(openId: string) {
 export async function updateUserBackground(
   userId: number,
   data: {
+    name?: string;
     school?: string;
     major?: string;
     hometown?: string;
@@ -215,6 +227,7 @@ export async function updateUserBackground(
     classYear?: string;
     targetIndustry?: "investment_banking" | "venture_capital" | "consulting";
     recruitingSeason?: string;
+    recruitingRegion?: "us" | "uk" | "europe" | "hong_kong" | "other";
     onboardingCompleted?: boolean;
   }
 ) {
