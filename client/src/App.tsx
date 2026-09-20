@@ -22,13 +22,17 @@ import { trpc } from "./lib/trpc";
 function OnboardingGate({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const { data: profile, isLoading } = trpc.user.getProfile.useQuery(undefined, { retry: false });
+  const needsOnboarding = Boolean(
+    profile &&
+    (!profile.onboardingCompleted || !profile.school || !profile.recruitingSeason || !profile.recruitingRegion),
+  );
 
   useEffect(() => {
-    if (isLoading || !profile || profile.onboardingCompleted) return;
+    if (isLoading || !needsOnboarding) return;
     if (location !== "/onboarding") setLocation("/onboarding");
-  }, [isLoading, location, profile, setLocation]);
+  }, [isLoading, location, needsOnboarding, setLocation]);
 
-  if (location !== "/onboarding" && (isLoading || (profile && !profile.onboardingCompleted))) {
+  if (location !== "/onboarding" && (isLoading || needsOnboarding)) {
     return <div className="flex h-screen items-center justify-center paper-bg"><p className="font-mono text-sm text-[var(--color-ink-muted)]">Preparing your workspace…</p></div>;
   }
   return children;
