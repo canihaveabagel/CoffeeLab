@@ -33,7 +33,7 @@ const schemaStatements = [
     name TEXT,
     email TEXT,
     loginMethod TEXT,
-    role TEXT NOT NULL DEFAULT 'user',
+    role TEXT NOT NULL,
     school TEXT,
     major TEXT,
     classYear TEXT,
@@ -63,7 +63,7 @@ const schemaStatements = [
     industry TEXT,
     role TEXT,
     notes TEXT,
-    status TEXT NOT NULL DEFAULT 'not_started',
+    status TEXT NOT NULL,
     isDemo INTEGER NOT NULL DEFAULT 0,
     lastContactedAt INTEGER,
     createdAt INTEGER NOT NULL DEFAULT (unixepoch()),
@@ -77,7 +77,7 @@ const schemaStatements = [
     transcriptText TEXT,
     audioFileKey TEXT,
     audioFileUrl TEXT,
-    transcriptionStatus TEXT DEFAULT 'pending',
+    transcriptionStatus TEXT NOT NULL,
     notes TEXT,
     isDemo INTEGER NOT NULL DEFAULT 0,
     createdAt INTEGER NOT NULL DEFAULT (unixepoch()),
@@ -101,7 +101,7 @@ const schemaStatements = [
     type TEXT NOT NULL,
     subject TEXT,
     body TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'draft',
+    status TEXT NOT NULL,
     isDemo INTEGER NOT NULL DEFAULT 0,
     createdAt INTEGER NOT NULL DEFAULT (unixepoch()),
     updatedAt INTEGER NOT NULL DEFAULT (unixepoch())
@@ -111,8 +111,8 @@ const schemaStatements = [
     userId INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     contactId INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
     reason TEXT NOT NULL,
-    priority TEXT NOT NULL DEFAULT 'medium',
-    sourceType TEXT NOT NULL DEFAULT 'gap_analysis',
+    priority TEXT NOT NULL,
+    sourceType TEXT NOT NULL,
     sourceChatId INTEGER REFERENCES coffee_chats(id) ON DELETE SET NULL,
     isDemo INTEGER NOT NULL DEFAULT 0,
     createdAt INTEGER NOT NULL DEFAULT (unixepoch())
@@ -163,7 +163,10 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
   try {
-    const values: InsertUser = { openId: user.openId };
+    const values: InsertUser = {
+      openId: user.openId,
+      role: user.role ?? "user",
+    };
     const updateSet: Partial<InsertUser> = {};
     const textFields = ["name", "email", "loginMethod"] as const;
     type TextField = (typeof textFields)[number];
@@ -306,7 +309,7 @@ export async function createContact(data: InsertContact) {
   const db = await getDb();
   const result = await db
     .insert(contacts)
-    .values(data)
+    .values({ status: "not_started", ...data })
     .returning({ id: contacts.id });
   return { insertId: result[0]?.id ?? 0 };
 }
@@ -336,7 +339,9 @@ export async function bulkInsertContacts(data: InsertContact[]) {
   if (!db) throw new Error("DB unavailable");
   if (data.length === 0) return;
   for (let i = 0; i < data.length; i += 50) {
-    await db.insert(contacts).values(data.slice(i, i + 50));
+    await db
+      .insert(contacts)
+      .values(data.slice(i, i + 50).map(row => ({ status: "not_started" as const, ...row })));
   }
 }
 
@@ -388,7 +393,7 @@ export async function createCoffeeChat(data: InsertCoffeeChat) {
   const db = await getDb();
   const result = await db
     .insert(coffeeChats)
-    .values(data)
+    .values({ transcriptionStatus: "pending", ...data })
     .returning({ id: coffeeChats.id });
   return { insertId: result[0]?.id ?? 0 };
 }
@@ -486,7 +491,7 @@ export async function createEmailDraft(data: InsertEmailDraft) {
   const db = await getDb();
   const result = await db
     .insert(emailDrafts)
-    .values(data)
+    .values({ status: "draft", ...data })
     .returning({ id: emailDrafts.id });
   return { insertId: result[0]?.id ?? 0 };
 }
@@ -532,7 +537,13 @@ export async function bulkInsertRecommendations(data: InsertRecommendation[]) {
   if (!db) throw new Error("DB unavailable");
   if (data.length === 0) return;
   await db.delete(recommendations).where(eq(recommendations.userId, data[0]!.userId));
-  await db.insert(recommendations).values(data);
+  await db.insert(recommendations).values(
+    data.map(row => ({
+      priority: "medium" as const,
+      sourceType: "gap_analysis" as const,
+      ...row,
+    })),
+  );
 }
 
 // ─── Recruiting Timelines ─────────────────────────────────────────────────────
