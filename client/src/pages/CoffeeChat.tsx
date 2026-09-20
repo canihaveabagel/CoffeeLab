@@ -25,6 +25,15 @@ const CATEGORY_STYLES: Record<TakeawayCategory, { bg: string; border: string; te
 };
 
 // ─── Takeaway section ─────────────────────────────────────────────────────────
+function splitTakeawayBullets(content: string): string[] {
+  return content
+    .replace(/\r/g, "")
+    .replace(/([^\n])\s+(?=•\s+)/g, "$1\n")
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*(?:[•*-]|\d+[.)])\s*/, "").trim())
+    .filter(Boolean);
+}
+
 function TakeawaySection({
   category,
   takeaways,
@@ -32,7 +41,7 @@ function TakeawaySection({
   onHover,
 }: {
   category: TakeawayCategory;
-  takeaways: Array<{ id: number; content: string; isKeyInsight: boolean }>;
+  takeaways: Array<{ key: string; content: string; isKeyInsight: boolean }>;
   hoveredKeyword: string | null;
   onHover: (keyword: string | null) => void;
 }) {
@@ -48,22 +57,22 @@ function TakeawaySection({
           {takeaways.length} insight{takeaways.length !== 1 ? "s" : ""}
         </span>
       </div>
-      <div className="space-y-1.5 pl-3 border-l-2 border-[var(--color-border)]">
+      <div className="space-y-2.5 pl-3 border-l-2 border-[var(--color-border)]">
         {takeaways.map((t) => {
           // Extract a short keyword phrase (first 6 words) for transcript highlight
           const keyword = t.content.split(/\s+/).slice(0, 6).join(" ");
           const isHovered = hoveredKeyword === keyword;
           return (
             <div
-              key={t.id}
-              className={`flex items-start gap-2 p-1.5 rounded cursor-pointer transition-colors ${isHovered ? "bg-amber-50 border border-amber-200" : "hover:bg-[var(--color-paper-dark)]"}`}
+              key={t.key}
+              className={`flex items-start gap-2.5 px-2 py-2 rounded cursor-pointer transition-colors ${isHovered ? "bg-amber-50 border border-amber-200" : "hover:bg-[var(--color-paper-dark)]"}`}
               onMouseEnter={() => onHover(keyword)}
               onMouseLeave={() => onHover(null)}
             >
-              {t.isKeyInsight && (
-                <span className="text-amber-500 text-xs mt-0.5 flex-shrink-0">★</span>
-              )}
-              <p className="text-sm text-[var(--color-ink-muted)] leading-relaxed">{t.content}</p>
+              <span className={`text-sm mt-px flex-shrink-0 ${t.isKeyInsight ? "text-amber-500" : s.text}`} aria-hidden="true">
+                {t.isKeyInsight ? "★" : "•"}
+              </span>
+              <p className="text-sm text-[var(--color-ink-muted)] leading-relaxed flex-1">{t.content}</p>
             </div>
           );
         })}
@@ -584,13 +593,23 @@ function ChatDetail({ chatId }: { chatId: number }) {
   }
   if (!chat) return <p className="text-sm text-[var(--color-ink-muted)]">Chat not found.</p>;
 
-  type TakeawayItem = { id: number; content: string; isKeyInsight: boolean };
+  type TakeawayItem = { key: string; content: string; isKeyInsight: boolean };
   const groupedTakeaways: Partial<Record<TakeawayCategory, TakeawayItem[]>> = {};
   (takeaways ?? []).forEach((t) => {
     const cat = t.category as TakeawayCategory;
     if (!groupedTakeaways[cat]) groupedTakeaways[cat] = [];
-    groupedTakeaways[cat]!.push({ id: t.id, content: t.content, isKeyInsight: false });
+    splitTakeawayBullets(t.content).forEach((content, bulletIndex) => {
+      groupedTakeaways[cat]!.push({
+        key: `${t.id}-${bulletIndex}`,
+        content,
+        isKeyInsight: Boolean(t.isKeyInsight),
+      });
+    });
   });
+  const insightCount = Object.values(groupedTakeaways).reduce(
+    (total, items) => total + (items?.length ?? 0),
+    0,
+  );
 
   const postChatDrafts = (drafts ?? []).filter(
     (d) => d.type === "thank_you" || d.type === "referral_ask"
@@ -633,7 +652,7 @@ function ChatDetail({ chatId }: { chatId: number }) {
       {/* Tab bar */}
       <div className="flex items-center gap-0 border-b border-[var(--color-border-dark)]">
         {(["insights", "emails"] as const).map((tab) => {
-          const count = tab === "emails" ? postChatDrafts.length : (takeaways?.length ?? 0);
+          const count = tab === "emails" ? postChatDrafts.length : insightCount;
           return (
             <button
               key={tab}

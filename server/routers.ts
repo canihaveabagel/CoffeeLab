@@ -153,13 +153,14 @@ Use only these exact category labels:
 
 Rules:
 - Omit categories with no meaningful evidence. Never add filler such as "no insights".
-- Keep each bullet under 22 words and preserve concrete names, dates, firms, groups, and next steps.
+- Keep each insight under 22 words and preserve concrete names, dates, firms, groups, and next steps.
 - Separate facts from advice. Do not infer a referral signal unless the speaker clearly offered help.
-- Merge duplicates and keep the 1-3 strongest bullets per relevant category.
-- Use a "• " prefix for every bullet. No paragraphs.
-- Return at most 16 total bullets.
+- Merge duplicates and keep the 1-3 strongest insights per relevant category.
+- Write polished, concise, complete sentences in sentence case with correct spelling, grammar, and punctuation.
+- Put exactly one insight in each array item. The content must be plain text with no bullet prefix, numbering, heading, or paragraph break.
+- Return at most 16 total insights.
 
-Return one JSON object: { "takeaways": [{ "category": "Industry", "content": "• bullet 1\n• bullet 2" }] }`;
+Return one JSON object: { "takeaways": [{ "category": "Industry", "content": "A concise, transcript-supported insight." }] }`;
 
   const response = await invokeLLM({
     messages: [{ role: "user", content: prompt }],
@@ -209,7 +210,19 @@ Return one JSON object: { "takeaways": [{ "category": "Industry", "content": "�
         typeof item.content === "string" &&
         item.content.trim().length > 0,
     )
-    .slice(0, 8);
+    .flatMap((item) =>
+      item.content
+        .replace(/\r/g, "")
+        .replace(/([^\n])\s+(?=•\s+)/g, "$1\n")
+        .split(/\n+/)
+        .map((line) => line.replace(/^\s*(?:[•*-]|\d+[.)])\s*/, "").trim())
+        .filter(Boolean)
+        .map((content) => ({
+          category: item.category,
+          content: /[.!?]$/.test(content) ? content : `${content}.`,
+        })),
+    )
+    .slice(0, 16);
 }
 
 async function generatePostChatEmail(
