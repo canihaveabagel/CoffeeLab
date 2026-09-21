@@ -158,6 +158,16 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   }
 
   const model = params.model ?? ENV.anthropicModel;
+  const outputConfig = format?.type === "json_schema"
+    ? {
+        output_config: {
+          format: {
+            type: "json_schema",
+            schema: format.json_schema.schema,
+          },
+        },
+      }
+    : {};
   const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -169,6 +179,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
       model,
       max_tokens: params.max_tokens ?? params.maxTokens ?? 4096,
       ...(systems.length > 0 ? { system: systems.join("\n\n") } : {}),
+      ...outputConfig,
       messages,
     }),
   });

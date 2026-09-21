@@ -211,7 +211,11 @@ async function runTakeawayAnalysis(
 ): Promise<Array<{ category: string; content: string }>> {
   const response = await invokeLLM({
     messages,
-    maxTokens: 6000,
+    // Haiku is substantially faster for extraction while the JSON schema keeps
+    // the result predictable. This request previously used Sonnet with a 6k
+    // output allowance and could exceed the site's synchronous request window.
+    model: "claude-haiku-4-5-20251001",
+    maxTokens: 3200,
     response_format: {
       type: "json_schema",
       json_schema: {
@@ -803,9 +807,25 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "The uploaded document is empty" });
         }
 
-        const extracted = isPdf
-          ? await analyzePdfTakeaways(input.fileBase64, input.fileName, context)
-          : await analyzeTakeaways(sourceText, context);
+        const analysisStartedAt = Date.now();
+        let extracted: Array<{ category: string; content: string }>;
+        try {
+          extracted = isPdf
+            ? await analyzePdfTakeaways(input.fileBase64, input.fileName, context)
+            : await analyzeTakeaways(sourceText, context);
+        } catch (error) {
+          console.error("Document analysis failed", {
+            mimeType: input.mimeType,
+            byteLength: bytes.byteLength,
+            durationMs: Date.now() - analysisStartedAt,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "The document uploaded, but AI analysis did not finish. Please try again.",
+            cause: error,
+          });
+        }
 
         const chat = await createCoffeeChat({
           userId: ctx.user.id,
