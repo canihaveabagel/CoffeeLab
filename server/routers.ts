@@ -1,6 +1,5 @@
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { invokeLLM } from "./_core/llm";
-import { uploadAndTranscribe } from "./assemblyai";
 import {
   bulkInsertContacts,
   bulkInsertRecommendations,
@@ -135,11 +134,20 @@ Return JSON: { "subject": "...", "body": "..." }`;
   return JSON.parse(typeof content === "string" ? content : JSON.stringify(content));
 }
 
-async function analyzeTakeaways(transcript: string): Promise<Array<{ category: string; content: string }>> {
-  const prompt = `You are a meticulous recruiting note-taker. Extract only takeaways that are explicitly supported by this coffee chat transcript.
+type TakeawayContext = {
+  contactName?: string | null;
+  firm?: string | null;
+  group?: string | null;
+};
 
-TRANSCRIPT:
-${transcript}
+function buildTakeawayInstructions(context: TakeawayContext): string {
+  return `<context>
+Contact: ${context.contactName ?? "Unknown"}
+Firm: ${context.firm ?? "Unknown"}
+Group: ${context.group ?? "Unknown"}
+</context>
+
+You are a meticulous investment-banking recruiting note-taker. Produce a detailed, faithful record of the conversation or uploaded notes using only information supported by the source.
 
 Use only these exact category labels:
 1. Industry — insights about the industry, market trends, deal flow
@@ -153,54 +161,27 @@ Use only these exact category labels:
 
 Rules:
 - Omit categories with no meaningful evidence. Never add filler such as "no insights".
-- Keep each insight under 22 words and preserve concrete names, dates, firms, groups, and next steps.
-- Separate facts from advice. Do not infer a referral signal unless the speaker clearly offered help.
-- Merge duplicates and keep the 1-3 strongest insights per relevant category.
-- Write polished, concise, complete sentences in sentence case with correct spelling, grammar, and punctuation.
+- Capture specific names, teams, deals, responsibilities, timelines, recruiting criteria, interview steps, technical topics, resources, and next actions whenever stated.
+- Preserve the speaker's meaning, qualifiers, uncertainty, and cause-and-effect reasoning. Never turn a tentative comment into a fact.
+- Separate facts from advice. Attribute personal experiences or opinions to the speaker when that distinction matters.
+- Do not infer a referral signal unless the speaker clearly offered an introduction, referral, resume pass, or follow-up.
+- Merge duplicates, but retain distinct supporting details. Keep 2-5 strong insights per relevant category when the source supports them.
+- Each insight should normally be 18-45 words: detailed enough to be useful later, but focused on one idea.
+- Write polished, complete sentences in sentence case with correct spelling, grammar, and punctuation.
 - Put exactly one insight in each array item. The content must be plain text with no bullet prefix, numbering, heading, or paragraph break.
-- Return at most 16 total insights.
+- Return up to 28 total insights. Accuracy and useful specificity matter more than filling the limit.
+- Before answering, silently verify every insight against the source and remove anything unsupported, generic, or repetitive.
 
-Return one JSON object: { "takeaways": [{ "category": "Industry", "content": "A concise, transcript-supported insight." }] }`;
+Return one JSON object: { "takeaways": [{ "category": "Industry", "content": "A detailed, source-supported insight." }] }`;
+}
 
-  const response = await invokeLLM({
-    messages: [{ role: "user", content: prompt }],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "takeaways",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            takeaways: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  category: { type: "string" },
-                  content: { type: "string" },
-                },
-                required: ["category", "content"],
-                additionalProperties: false,
-              },
-            },
-          },
-          required: ["takeaways"],
-          additionalProperties: false,
-        },
-      },
-    },
-  });
-
-  const _raw = response.choices[0]?.message?.content ?? "{}";
-  const content = typeof _raw === "string" ? _raw : JSON.stringify(_raw);
-  const jsonText = typeof content === "string" ? content : JSON.stringify(content);
-  const objectStart = jsonText.indexOf("{");
-  const objectEnd = jsonText.lastIndexOf("}");
+function normalizeTakeawayResponse(raw: string): Array<{ category: string; content: string }> {
+  const objectStart = raw.indexOf("{");
+  const objectEnd = raw.lastIndexOf("}");
   if (objectStart < 0 || objectEnd <= objectStart) {
     throw new Error("The summary service returned an invalid response. Please try again.");
   }
-  const parsed = JSON.parse(jsonText.slice(objectStart, objectEnd + 1)) as {
+  const parsed = JSON.parse(raw.slice(objectStart, objectEnd + 1)) as {
     takeaways?: Array<{ category?: unknown; content?: unknown }>;
   };
   return (parsed.takeaways ?? [])
@@ -222,7 +203,80 @@ Return one JSON object: { "takeaways": [{ "category": "Industry", "content": "A 
           content: /[.!?]$/.test(content) ? content : `${content}.`,
         })),
     )
-    .slice(0, 16);
+    .slice(0, 28);
+}
+
+async function runTakeawayAnalysis(
+  messages: Parameters<typeof invokeLLM>[0]["messages"],
+): Promise<Array<{ category: string; content: string }>> {
+  const response = await invokeLLM({
+    messages,
+    maxTokens: 6000,
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "takeaways",
+        strict: true,
+        schema: {
+          type: "object",
+          properties: {
+            takeaways: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  category: {
+                    type: "string",
+                    enum: ["Industry", "Firm", "Group", "Recruiting", "Technical Prep", "Personal Growth", "Referral Signal", "Next Person To Meet"],
+                  },
+                  content: { type: "string" },
+                },
+                required: ["category", "content"],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ["takeaways"],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+  const raw = response.choices[0]?.message?.content ?? "{}";
+  return normalizeTakeawayResponse(typeof raw === "string" ? raw : JSON.stringify(raw));
+}
+
+async function analyzeTakeaways(
+  transcript: string,
+  context: TakeawayContext = {},
+): Promise<Array<{ category: string; content: string }>> {
+  const prompt = `<transcript>
+${transcript}
+</transcript>
+
+${buildTakeawayInstructions(context)}`;
+
+  return runTakeawayAnalysis([{ role: "user", content: prompt }]);
+}
+
+async function analyzePdfTakeaways(
+  pdfBase64: string,
+  fileName: string,
+  context: TakeawayContext = {},
+): Promise<Array<{ category: string; content: string }>> {
+  return runTakeawayAnalysis([
+    {
+      role: "user",
+      content: [
+        {
+          type: "document",
+          source: { type: "base64", media_type: "application/pdf", data: pdfBase64 },
+          title: fileName,
+        },
+        { type: "text", text: buildTakeawayInstructions(context) },
+      ],
+    },
+  ]);
 }
 
 async function generatePostChatEmail(
@@ -704,6 +758,7 @@ export const appRouter = router({
       .input(z.object({
         contactId: z.number(),
         transcriptText: z.string().optional(),
+        notes: z.string().optional(),
         chatDate: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -713,6 +768,7 @@ export const appRouter = router({
           userId: ctx.user.id,
           contactId: input.contactId,
           transcriptText: input.transcriptText,
+          notes: input.notes,
           chatDate: input.chatDate ? new Date(input.chatDate) : new Date(),
           transcriptionStatus: "done",
         });
@@ -720,50 +776,60 @@ export const appRouter = router({
         return { success: true, chatId: chat.insertId };
       }),
 
-    transcribeAudio: protectedProcedure
+    createFromDocument: protectedProcedure
       .input(z.object({
-        // base64-encoded audio file bytes
-        audioBase64: z.string(),
-        mimeType: z.string().default("audio/mpeg"),
         contactId: z.number(),
+        fileName: z.string().min(1).max(200),
+        mimeType: z.enum(["application/pdf", "text/plain", "text/markdown"]),
+        fileBase64: z.string().min(1).max(12_000_000),
         chatDate: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const contact = await getContact(input.contactId, ctx.user.id);
         if (!contact) throw new TRPCError({ code: "NOT_FOUND" });
-        // Create a pending chat record first
+        const bytes = Buffer.from(input.fileBase64, "base64");
+        if (bytes.byteLength === 0 || bytes.byteLength > 8 * 1024 * 1024) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Document must be smaller than 8 MB" });
+        }
+
+        const context = {
+          contactName: contact.name,
+          firm: contact.firm,
+          group: contact.bankingGroup,
+        };
+        const isPdf = input.mimeType === "application/pdf";
+        const sourceText = isPdf ? "" : bytes.toString("utf8").trim();
+        if (!isPdf && !sourceText) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "The uploaded document is empty" });
+        }
+
+        const extracted = isPdf
+          ? await analyzePdfTakeaways(input.fileBase64, input.fileName, context)
+          : await analyzeTakeaways(sourceText, context);
+
         const chat = await createCoffeeChat({
           userId: ctx.user.id,
           contactId: input.contactId,
-          transcriptionStatus: "processing",
+          transcriptText: isPdf ? `[PDF source: ${input.fileName}]` : sourceText,
+          transcriptionStatus: "done",
           chatDate: input.chatDate ? new Date(input.chatDate) : new Date(),
         });
-
-        const chatId = chat.insertId;
-        if (!chatId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create chat record" });
-
-        try {
-          // Decode base64 to ArrayBuffer and send directly to AssemblyAI
-          const buffer = Buffer.from(input.audioBase64, "base64");
-          const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
-          const result = await uploadAndTranscribe(arrayBuffer, { speakerLabels: true });
-
-          if ("error" in result) {
-            await updateCoffeeChat(chatId, { transcriptionStatus: "error" });
-            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error });
-          }
-
-          await updateCoffeeChat(chatId, {
-            transcriptText: result.text,
-            transcriptionStatus: "done",
-          });
-          await updateContact(input.contactId, { status: "chatted", lastContactedAt: new Date() });
-          return { chatId, transcript: result.text };
-        } catch (err) {
-          await updateCoffeeChat(chatId, { transcriptionStatus: "error" });
-          if (err instanceof TRPCError) throw err;
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Transcription failed" });
+        if (!chat.insertId) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create chat record" });
         }
+
+        const validCategories = ["Industry", "Firm", "Group", "Recruiting", "Technical Prep", "Personal Growth", "Referral Signal", "Next Person To Meet"];
+        const toInsert = extracted
+          .filter(t => validCategories.includes(t.category))
+          .map(t => ({
+            chatId: chat.insertId,
+            userId: ctx.user.id,
+            category: t.category as typeof import("../drizzle/schema").takeaways.$inferInsert.category,
+            content: t.content,
+          }));
+        await bulkInsertTakeaways(toInsert);
+        await updateContact(input.contactId, { status: "chatted", lastContactedAt: new Date() });
+        return { success: true, chatId: chat.insertId, insightCount: toInsert.length };
       }),
 
     update: protectedProcedure
@@ -790,7 +856,12 @@ export const appRouter = router({
 
         await deleteTakeawaysByChatId(input.chatId);
 
-        const extracted = await analyzeTakeaways(input.transcript);
+        const contact = await getContact(chat.contactId, ctx.user.id);
+        const extracted = await analyzeTakeaways(input.transcript, {
+          contactName: contact?.name,
+          firm: contact?.firm,
+          group: contact?.bankingGroup,
+        });
         const validCategories = ["Industry", "Firm", "Group", "Recruiting", "Technical Prep", "Personal Growth", "Referral Signal", "Next Person To Meet"];
 
         const toInsert = extracted

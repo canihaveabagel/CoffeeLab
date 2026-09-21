@@ -39,11 +39,21 @@ type TakeawayItem = {
   chatDate?: Date | null;
 };
 
+function splitTakeawayBullets(content: string): string[] {
+  return content
+    .replace(/\r/g, "")
+    .replace(/([^\n])\s+(?=•\s+)/g, "$1\n")
+    .split(/\n+/)
+    .map((line) => line.replace(/^\s*(?:[•*-]|\d+[.)])\s*/, "").trim())
+    .filter(Boolean);
+}
+
 function TakeawayCard({ takeaway, onUpdated }: {
   takeaway: TakeawayItem;
   onUpdated: () => void;
 }) {
   const colors = CATEGORY_COLORS[takeaway.category] ?? { bg: "bg-gray-50", border: "border-gray-200", text: "text-gray-800", dot: "bg-gray-400" };
+  const bullets = splitTakeawayBullets(takeaway.content);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(takeaway.content);
   const [editCategory, setEditCategory] = useState(takeaway.category);
@@ -140,9 +150,15 @@ function TakeawayCard({ takeaway, onUpdated }: {
         <DoodleStar size={12} className="absolute top-3 right-8 text-amber-500" />
       )}
       <div className="flex items-start gap-3">
-        <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${colors.dot}`} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-[var(--color-ink)] leading-relaxed">{takeaway.content}</p>
+          <ul className="space-y-2.5">
+            {bullets.map((bullet, index) => (
+              <li key={`${takeaway.id}-${index}`} className="flex items-start gap-2.5">
+                <span className={`mt-[7px] h-1.5 w-1.5 rounded-full flex-shrink-0 ${colors.dot}`} aria-hidden="true" />
+                <span className="text-sm text-[var(--color-ink)] leading-relaxed">{bullet}</span>
+              </li>
+            ))}
+          </ul>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${colors.bg} ${colors.border} ${colors.text}`}>
               {takeaway.category}
@@ -224,8 +240,11 @@ export default function Notebook() {
     return Array.from(set).sort();
   }, [takeaways]);
 
-  const totalCount = filtered.length;
-  const keyCount = filtered.filter(t => t.isKeyInsight).length;
+  const totalCount = filtered.reduce((count, t) => count + splitTakeawayBullets(t.content).length, 0);
+  const keyCount = filtered.reduce(
+    (count, t) => count + (t.isKeyInsight ? splitTakeawayBullets(t.content).length : 0),
+    0,
+  );
 
   function handleUpdated() {
     utils.notebook.all.invalidate();
@@ -355,7 +374,7 @@ export default function Notebook() {
                     <div className={`w-2.5 h-2.5 rounded-full ${colors.dot}`} />
                     <h3 className="text-sm font-bold text-[var(--color-ink)]">{cat.label}</h3>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${colors.bg} ${colors.border} ${colors.text}`}>
-                      {items.length}
+                      {items.reduce((count, item) => count + splitTakeawayBullets(item.content).length, 0)}
                     </span>
                   </div>
                   <div className="space-y-2 pl-4 border-l-2 border-[var(--color-border-dark)]">
@@ -375,7 +394,7 @@ export default function Notebook() {
                     <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
                     <h3 className="text-sm font-bold text-[var(--color-ink)]">{cat}</h3>
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold border bg-gray-50 border-gray-200 text-gray-700">
-                      {items.length}
+                      {items.reduce((count, item) => count + splitTakeawayBullets(item.content).length, 0)}
                     </span>
                   </div>
                   <div className="space-y-2 pl-4 border-l-2 border-[var(--color-border-dark)]">

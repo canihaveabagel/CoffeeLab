@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 
 export type Lang = "en" | "zh";
 
@@ -397,28 +397,17 @@ const LanguageContext = createContext<LanguageContextValue>({
   t: (key) => translations.en[key],
 });
 
-const LANG_STORAGE_KEY = "coffeelab_lang";
-
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>(() => {
-    try {
-      const stored = localStorage.getItem(LANG_STORAGE_KEY);
-      if (stored === "en" || stored === "zh") return stored;
-    } catch {}
-    return "en";
-  });
+  const lang: Lang = "en";
 
   useEffect(() => {
-    try { localStorage.setItem(LANG_STORAGE_KEY, lang); } catch {}
-    document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
-  }, [lang]);
+    document.documentElement.lang = "en";
+  }, []);
 
-  function toggleLang() {
-    setLang(l => l === "en" ? "zh" : "en");
-  }
+  function toggleLang() {}
 
   function t(key: TranslationKey): string {
-    return (translations[lang] as Record<string, string>)[key] ?? (translations.en as Record<string, string>)[key] ?? key;
+    return (translations.en as Record<string, string>)[key] ?? key;
   }
 
   return (

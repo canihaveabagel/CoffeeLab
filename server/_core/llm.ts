@@ -11,7 +11,14 @@ export type FileContent = {
   type: "file_url";
   file_url: { url: string; mime_type?: string };
 };
-export type MessageContent = string | TextContent | ImageContent | FileContent;
+export type DocumentContent = {
+  type: "document";
+  source:
+    | { type: "base64"; media_type: "application/pdf"; data: string }
+    | { type: "text"; media_type: "text/plain"; data: string };
+  title?: string;
+};
+export type MessageContent = string | TextContent | ImageContent | FileContent | DocumentContent;
 export type Message = {
   role: Role;
   content: MessageContent | MessageContent[];
@@ -72,9 +79,23 @@ function contentToText(content: Message["content"]): string {
       if (typeof part === "string") return part;
       if (part.type === "text") return part.text;
       if (part.type === "image_url") return `[Image: ${part.image_url.url}]`;
-      return `[File: ${part.file_url.url}]`;
+      if (part.type === "file_url") return `[File: ${part.file_url.url}]`;
+      return `[Document: ${part.title ?? "uploaded document"}]`;
     })
     .join("\n");
+}
+
+function contentToAnthropic(content: Message["content"]) {
+  const parts = Array.isArray(content) ? content : [content];
+  return parts.map(part => {
+    if (typeof part === "string") return { type: "text" as const, text: part };
+    if (part.type === "text") return part;
+    if (part.type === "document") return part;
+    if (part.type === "image_url") {
+      return { type: "text" as const, text: `[Image: ${part.image_url.url}]` };
+    }
+    return { type: "text" as const, text: `[File: ${part.file_url.url}]` };
+  });
 }
 
 function requestedFormat(params: InvokeParams): ResponseFormat | undefined {
@@ -124,7 +145,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     .filter(message => message.role === "user" || message.role === "assistant")
     .map(message => ({
       role: message.role as "user" | "assistant",
-      content: contentToText(message.content),
+      content: contentToAnthropic(message.content),
     }));
 
   const format = requestedFormat(params);

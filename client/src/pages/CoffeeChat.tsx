@@ -1,8 +1,8 @@
 import { trpc } from "@/lib/trpc";
 import { TAKEAWAY_CATEGORIES, TakeawayCategory, EMAIL_TYPE_LABELS, EmailDraftType } from "@/lib/types";
-import { DoodleCoffeeCup, DoodleMicrophone, DoodleSparkle, DoodleCheck, DoodleCalendar, DoodleNotebook } from "@/components/DoodleIcons";
+import { DoodleCoffeeCup, DoodleSparkle, DoodleCheck, DoodleCalendar, DoodleNotebook } from "@/components/DoodleIcons";
 import {
-  ArrowLeft, Check, Copy, FileAudio, Mail, Pencil, X, ChevronRight, FileText,
+  ArrowLeft, Check, Copy, Mail, Pencil, X, ChevronRight, FileText,
 } from "lucide-react";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useLocation, useParams, useSearch } from "wouter";
@@ -224,8 +224,8 @@ function NewChatForm({ onSuccess }: { onSuccess: (chatId: number) => void }) {
   const [contactId, setContactId] = useState(preselectedContactId ?? "");
   const [transcript, setTranscript] = useState("");
   const [notes, setNotes] = useState("");
-  const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [inputMode, setInputMode] = useState<"text" | "audio" | "notes">("text");
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<"text" | "document" | "notes">("text");
   const fileRef = useRef<HTMLInputElement>(null);
   const utils = trpc.useUtils();
 
@@ -273,67 +273,65 @@ function NewChatForm({ onSuccess }: { onSuccess: (chatId: number) => void }) {
     onError: (e) => toast.error(e.message),
   });
 
-  const updateChatMutation = trpc.coffeeChats.update.useMutation({
+  const createFromDocumentMutation = trpc.coffeeChats.createFromDocument.useMutation({
+    onSuccess: (d) => {
+      utils.coffeeChats.list.invalidate();
+      utils.coffeeChats.listAll.invalidate();
+      utils.dashboard.stats.invalidate();
+      utils.notebook.all.invalidate();
+      toast.success(`Document analyzed — ${d.insightCount} detailed insights extracted`);
+      onSuccess(d.chatId);
+    },
     onError: (e) => toast.error(e.message),
   });
 
-  const [isTranscribing, setIsTranscribing] = useState(false);
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result ?? "");
+        resolve(result.includes(",") ? result.slice(result.indexOf(",") + 1) : result);
+      };
+      reader.onerror = () => reject(new Error("Could not read the document"));
+      reader.readAsDataURL(file);
+    });
+  }
 
   const handleSubmit = async () => {
     if (!contactId) { toast.error("Select a contact"); return; }
     if (inputMode === "text" && !transcript.trim()) { toast.error("Paste a transcript"); return; }
     if (inputMode === "notes" && !notes.trim()) { toast.error("Enter your notes"); return; }
-    if (inputMode === "audio" && !audioFile) { toast.error("Upload an audio file"); return; }
+    if (inputMode === "document" && !documentFile) { toast.error("Upload a PDF, TXT, or Markdown document"); return; }
 
     if (inputMode === "text") {
       createChatMutation.mutate({ contactId: parseInt(contactId), transcriptText: transcript });
     } else if (inputMode === "notes") {
-      // Create chat with notes
-      createChatMutation.mutate({ contactId: parseInt(contactId) });
-      // Notes will be saved after chat is created via update
-      // We handle this in onSuccess by updating notes
-    } else if (audioFile) {
-      setIsTranscribing(true);
-      toast.info("Uploading audio to AssemblyAI — this may take 30–60 seconds...");
+      createChatMutation.mutate({ contactId: parseInt(contactId), notes });
+    } else if (documentFile) {
+      if (documentFile.size > 8 * 1024 * 1024) {
+        toast.error("Document must be smaller than 8 MB");
+        return;
+      }
       try {
-        const formData = new FormData();
-        formData.append("audio", audioFile);
-        const res = await fetch("/api/upload-audio", {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        });
-        if (!res.ok) {
-          const err = (await res.json().catch(() => ({ error: "Upload failed" }))) as {
-            error?: string;
-          };
-          toast.error(err.error || "Audio upload failed");
-          return;
-        }
-        const transcriptData = await res.json() as { text: string };
-        if (!transcriptData.text) {
-          toast.error("Transcription returned empty text");
-          return;
-        }
-        createChatMutation.mutate({
+        const fileBase64 = await fileToBase64(documentFile);
+        const mimeType = documentFile.type === "application/pdf"
+          ? "application/pdf"
+          : documentFile.name.toLowerCase().endsWith(".md")
+            ? "text/markdown"
+            : "text/plain";
+        createFromDocumentMutation.mutate({
           contactId: parseInt(contactId),
-          transcriptText: transcriptData.text,
+          fileName: documentFile.name,
+          mimeType,
+          fileBase64,
         });
       } catch (err) {
-        toast.error("Audio upload failed: " + (err as Error).message);
-      } finally {
-        setIsTranscribing(false);
+        toast.error("Document upload failed: " + (err as Error).message);
       }
     }
   };
 
-  // Handle notes mode: save notes after chat is created
-  const notesRef = useRef(notes);
-  notesRef.current = notes;
-  const inputModeRef = useRef(inputMode);
-  inputModeRef.current = inputMode;
-
-  const isPending = createChatMutation.isPending || isTranscribing;
+  const isPending = createChatMutation.isPending || createFromDocumentMutation.isPending;
 
   return (
     <div className="space-y-5">
@@ -429,14 +427,14 @@ function NewChatForm({ onSuccess }: { onSuccess: (chatId: number) => void }) {
             <DoodleNotebook size={12} /> Notes
           </button>
           <button
-            onClick={() => setInputMode("audio")}
+            onClick={() => setInputMode("document")}
             className={`text-xs px-3 py-1.5 rounded transition-all font-mono flex items-center gap-1.5 ${
-              inputMode === "audio"
+              inputMode === "document"
                 ? "bg-[var(--color-ink)] text-[var(--color-paper)] shadow-sm"
                 : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
             }`}
           >
-            <DoodleMicrophone size={12} /> Upload Audio
+            <FileText size={12} /> Upload Document
           </button>
         </div>
 
@@ -467,23 +465,23 @@ Example:
         ) : (
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
-              audioFile
+              documentFile
                 ? "border-[var(--color-ink)] bg-[var(--color-paper-dark)]"
                 : "border-[var(--color-border-dark)] hover:border-[var(--color-ink-muted)]"
             }`}
             onClick={() => fileRef.current?.click()}
           >
-            {audioFile ? (
+            {documentFile ? (
               <div className="flex items-center justify-center gap-3">
-                <FileAudio size={20} className="text-[var(--color-ink)]" />
+                <FileText size={20} className="text-[var(--color-ink)]" />
                 <div className="text-left">
-                  <p className="text-sm font-medium text-[var(--color-ink)]">{audioFile.name}</p>
+                  <p className="text-sm font-medium text-[var(--color-ink)]">{documentFile.name}</p>
                   <p className="text-xs font-mono text-[var(--color-ink-faint)]">
-                    {(audioFile.size / 1024 / 1024).toFixed(1)} MB
+                    {(documentFile.size / 1024 / 1024).toFixed(1)} MB
                   </p>
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setAudioFile(null); }}
+                  onClick={(e) => { e.stopPropagation(); setDocumentFile(null); }}
                   className="p-1 hover:bg-red-50 rounded"
                 >
                   <X size={14} className="text-[var(--color-ink-muted)]" />
@@ -491,17 +489,17 @@ Example:
               </div>
             ) : (
               <>
-                <DoodleMicrophone size={32} className="text-[var(--color-ink-faint)] mx-auto mb-2" />
-                <p className="text-sm font-medium text-[var(--color-ink)]">Drop audio file or click to browse</p>
-                <p className="text-xs font-mono text-[var(--color-ink-faint)] mt-1">MP3, WAV, M4A, WebM — max 100MB</p>
+                <FileText size={32} className="text-[var(--color-ink-faint)] mx-auto mb-2" />
+                <p className="text-sm font-medium text-[var(--color-ink)]">Choose a document to analyze</p>
+                <p className="text-xs font-mono text-[var(--color-ink-faint)] mt-1">PDF, TXT, Markdown — analyzed directly by Claude · max 8 MB</p>
               </>
             )}
             <input
               ref={fileRef}
               type="file"
-              accept="audio/*"
+              accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown"
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) setAudioFile(f); }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) setDocumentFile(f); }}
             />
           </div>
         )}
@@ -512,8 +510,8 @@ Example:
         disabled={isPending || !contactId}
         className="sketch-btn sketch-btn-primary w-full disabled:opacity-40"
       >
-        {isTranscribing ? (
-          <span className="font-mono text-sm">Transcribing audio… (30–60s)</span>
+        {createFromDocumentMutation.isPending ? (
+          <span className="font-mono text-sm">Analyzing document with Claude…</span>
         ) : createChatMutation.isPending ? (
           <span className="font-mono text-sm">Logging chat…</span>
         ) : (
@@ -616,6 +614,7 @@ function ChatDetail({ chatId }: { chatId: number }) {
   );
 
   const hasContent = !!(chat.transcriptText || (chat as typeof chat & { notes?: string }).notes);
+  const isPdfSource = chat.transcriptText?.startsWith("[PDF source:") ?? false;
 
   return (
     <div className="space-y-4">
@@ -681,7 +680,7 @@ function ChatDetail({ chatId }: { chatId: number }) {
           <div className="sketch-card overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--color-border-dark)]">
               <p className="text-[10px] font-mono font-semibold uppercase tracking-widest text-[var(--color-ink-faint)]">
-                {chat.transcriptText ? "Transcript" : "Notes"}
+                {isPdfSource ? "Source document" : chat.transcriptText ? "Transcript" : "Notes"}
               </p>
               {(chat as typeof chat & { notes?: string }).notes !== undefined && !chat.transcriptText && (
                 <button
@@ -696,7 +695,21 @@ function ChatDetail({ chatId }: { chatId: number }) {
               )}
             </div>
             <div className="p-4 max-h-[60vh] overflow-y-auto">
-              {chat.transcriptText ? (
+              {isPdfSource ? (
+                <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-paper-dark)] p-4">
+                  <div className="flex items-start gap-3">
+                    <FileText size={18} className="mt-0.5 flex-shrink-0 text-[var(--color-ink-muted)]" />
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-ink)]">
+                        {(chat.transcriptText ?? "").replace(/^\[PDF source:\s*/, "").replace(/\]$/, "")}
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-[var(--color-ink-muted)]">
+                        Claude analyzed this PDF directly. Upload it again from a new chat to run a fresh analysis.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : chat.transcriptText ? (
                 <HighlightedTranscript text={chat.transcriptText} keyword={hoveredKeyword} />
               ) : editingNotes ? (
                 <div className="space-y-2">
@@ -760,7 +773,7 @@ function ChatDetail({ chatId }: { chatId: number }) {
                   <span className="ml-2 text-amber-600 normal-case">Analyzing…</span>
                 )}
               </p>
-              {hasContent && (
+              {hasContent && !isPdfSource && (
                 <button
                   onClick={() => analyzeMutation.mutate({ chatId, transcript: chat.transcriptText ?? (chat as typeof chat & { notes?: string }).notes ?? "" })}
                   disabled={analyzeMutation.isPending}
@@ -958,7 +971,7 @@ export default function CoffeeChat() {
                   Log a New Coffee Chat
                 </h2>
                 <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">
-                  Paste a transcript, upload audio, or write notes — we'll extract insights automatically.
+                  Paste a transcript, upload a document, or write notes — Claude will extract detailed insights automatically.
                 </p>
               </div>
               <div className="sketch-card p-6">

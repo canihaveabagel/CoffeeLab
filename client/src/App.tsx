@@ -18,6 +18,8 @@ import Settings from "./pages/Settings";
 import Onboarding from "./pages/Onboarding";
 import Notebook from "./pages/Notebook";
 import { trpc } from "./lib/trpc";
+import { Home } from "lucide-react";
+import { Link } from "wouter";
 
 function OnboardingGate({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
@@ -58,6 +60,19 @@ function Router() {
   );
 }
 
+function HomeShortcut() {
+  const [location] = useLocation();
+  if (location === "/" || location === "/onboarding") return null;
+
+  return (
+    <Link href="/">
+      <span className="fixed bottom-5 right-5 z-50 sketch-btn sketch-btn-primary shadow-[2px_2px_0_0_var(--color-ink)]">
+        <Home size={14} /> Home
+      </span>
+    </Link>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -65,6 +80,7 @@ function App() {
         <ThemeProvider defaultTheme="light">
           <TooltipProvider>
             <Toaster theme="light" position="top-right" />
+            <HomeShortcut />
             <OnboardingGate><Router /></OnboardingGate>
           </TooltipProvider>
         </ThemeProvider>

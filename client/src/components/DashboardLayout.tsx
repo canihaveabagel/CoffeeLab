@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
-import { DoodleCoffeeCup, DoodleNotebook } from "@/components/DoodleIcons";
+import { DoodleCoffeeCup } from "@/components/DoodleIcons";
 import { useLang } from "@/contexts/LanguageContext";
 import type { TranslationKey } from "@/contexts/LanguageContext";
 import {
@@ -11,7 +11,6 @@ import {
   GripVertical,
   Mail,
   Settings,
-  Star,
   Users,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
@@ -41,7 +40,6 @@ const DEFAULT_NAV_ITEMS: NavItem[] = [
   { href: "/coffee-chat",    label: "Coffee Chats",    icon: Coffee },
   { href: "/outreach",       label: "Outreach",        icon: Mail },
   { href: "/notebook",       label: "Notebook",        icon: BookOpen },
-  { href: "/recommendations",label: "Recommendations", icon: Star },
   { href: "/settings",       label: "Settings",        icon: Settings },
 ];
 
@@ -79,7 +77,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, loading, isAuthenticated, logout } = useAuth();
-  const { t, lang, toggleLang } = useLang();
+  const { t } = useLang();
   const [location] = useLocation();
   const [navItems, setNavItems] = useState<NavItem[]>(getOrderedNavItems);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -198,23 +196,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-[var(--color-border-dark)] p-3 space-y-2">
-          {/* Demo mode badge + language toggle */}
-          <div className="flex items-center justify-between px-1 gap-2">
-            <div className="flex items-center gap-1.5 px-1 py-1 rounded-md bg-[var(--color-border)] border border-[var(--color-border-dark)] flex-1 min-w-0">
-              <DoodleNotebook size={12} className="text-[var(--color-ink-muted)] flex-shrink-0" />
-              <span className="text-[10px] font-mono font-semibold text-[var(--color-ink-muted)] uppercase tracking-wider truncate">
-                {t("nav_demo_mode")}
-              </span>
-            </div>
-            <button
-              onClick={toggleLang}
-              className="flex-shrink-0 text-[10px] font-mono font-semibold px-2 py-1 rounded border border-[var(--color-border-dark)] bg-[var(--color-paper-dark)] hover:border-[var(--color-ink-muted)] transition-all active:scale-95 text-[var(--color-ink)]"
-              title={lang === "en" ? "Switch to Chinese" : "切换为英文"}
-            >
-              {lang === "en" ? "中文" : "EN"}
-            </button>
-          </div>
+        <div className="border-t border-[var(--color-border-dark)] p-3">
           {/* User */}
           <div className="flex items-center gap-2 px-2 py-1">
             <div className="w-6 h-6 rounded-full bg-[var(--color-border-dark)] border border-[var(--color-border-dark)] flex items-center justify-center text-[10px] font-mono font-bold text-[var(--color-ink-muted)] flex-shrink-0">
@@ -227,7 +209,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <button
               onClick={() => logout()}
               className="text-[10px] text-[var(--color-ink-faint)] hover:text-[var(--color-ink)] transition-colors font-mono"
-              title={lang === "zh" ? "退出登录" : "Sign out"}
+              title="Sign out"
             >
               {t("nav_sign_out")}
             </button>

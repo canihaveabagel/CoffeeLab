@@ -104,9 +104,6 @@ export default function Dashboard() {
     sortBy: "createdAt",
     sortDir: "desc",
   });
-  const { data: recsData } = trpc.recommendations.list.useQuery();
-  const recs = recsData?.slice(0, 3) ?? [];
-
   // Recruiting timeline
   const { data: userProfile } = trpc.user.getProfile.useQuery();
   const recruitingRegion = (userProfile?.recruitingRegion as RecruitingRegion | null) ?? "other";
@@ -359,48 +356,20 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Next best contacts */}
+            {/* Relationship recommendations */}
             <div className="sketch-card p-4">
               <div className="flex items-center gap-2 mb-3">
                 <DoodleSparkle size={14} className="text-[var(--color-ink-muted)]" />
                 <h3 className="text-xs font-semibold font-mono uppercase tracking-wider text-[var(--color-ink)]">
-                  Next Best to Contact
+                  Relationship Recommendations
                 </h3>
               </div>
-              {!recs || recs.length === 0 ? (
-                <p className="text-xs text-[var(--color-ink-faint)] font-mono">
-                  Log more chats to get recommendations.
+              <div className="rounded-md border border-dashed border-[var(--color-border-dark)] bg-[var(--color-paper-dark)] px-3 py-4">
+                <p className="text-xs font-semibold text-[var(--color-ink)]">Coming soon</p>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--color-ink-muted)]">
+                  We’re improving recommendation accuracy before suggesting who you should contact next.
                 </p>
-              ) : (
-                <div className="space-y-1">
-                  {recs.map((r: any) => (
-                    <Link key={r.id} href={`/contacts/${r.contactId}`}>
-                      <div className="flex items-start gap-2 py-1.5 px-2 rounded hover:bg-[var(--color-paper-dark)] transition-colors cursor-pointer">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-[var(--color-ink)] truncate">
-                            {r.contactName ?? `Contact #${r.contactId}`}
-                          </p>
-                          <p className="text-[10px] text-[var(--color-ink-faint)] font-mono truncate">
-                            {r.firm} · {r.group}
-                          </p>
-                          <p className="text-[10px] text-[var(--color-ink-muted)] mt-0.5 line-clamp-2">
-                            {r.reason}
-                          </p>
-                        </div>
-                        <ChevronRight
-                          size={12}
-                          className="text-[var(--color-ink-faint)] flex-shrink-0 mt-0.5"
-                        />
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-              <Link href="/recommendations">
-                <button className="mt-3 w-full text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] flex items-center justify-center gap-1 transition-colors font-mono">
-                  View all recommendations <ArrowRight size={11} />
-                </button>
-              </Link>
+              </div>
             </div>
           </div>
         </div>

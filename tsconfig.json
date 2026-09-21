@@ -4,7 +4,6 @@
     "client/src/**/*",
     "drizzle/**/*",
     "shared/**/*",
-    "server/assemblyai.ts",
     "server/db.ts",
     "server/routers.ts",
     "server/_core/context.ts",
