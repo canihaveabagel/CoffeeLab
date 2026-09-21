@@ -4,7 +4,13 @@ import { DoodleSparkle, DoodleCheck } from "@/components/DoodleIcons";
 import { Check, Copy, Mail, Pencil, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
@@ -14,7 +20,14 @@ function EmailCard({
   onApprove,
   onUpdate,
 }: {
-  draft: { id: number; type: string; subject?: string | null; body: string; status: string; contactId: number };
+  draft: {
+    id: number;
+    type: string;
+    subject?: string | null;
+    body: string;
+    status: string;
+    contactId: number;
+  };
   contactName: string;
   onApprove: (id: number, subject: string, body: string) => void;
   onUpdate: (id: number, subject: string, body: string) => void;
@@ -55,24 +68,30 @@ function EmailCard({
         <div className="space-y-2">
           <input
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={e => setSubject(e.target.value)}
             placeholder="Subject line..."
             className="sketch-input w-full text-sm"
           />
           <textarea
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={e => setBody(e.target.value)}
             rows={8}
             className="sketch-textarea w-full text-sm font-mono"
           />
           <div className="flex gap-2">
             <button
-              onClick={() => { onUpdate(draft.id, subject, body); setEditing(false); }}
+              onClick={() => {
+                onUpdate(draft.id, subject, body);
+                setEditing(false);
+              }}
               className="sketch-btn sketch-btn-primary text-xs"
             >
               <DoodleCheck size={12} /> Save
             </button>
-            <button onClick={() => setEditing(false)} className="sketch-btn text-xs">
+            <button
+              onClick={() => setEditing(false)}
+              className="sketch-btn text-xs"
+            >
               Cancel
             </button>
           </div>
@@ -82,7 +101,9 @@ function EmailCard({
           {subject && (
             <p className="text-xs mb-2 font-mono">
               <span className="text-[var(--color-ink-faint)]">Subject: </span>
-              <span className="text-[var(--color-ink)] font-medium">{subject}</span>
+              <span className="text-[var(--color-ink)] font-medium">
+                {subject}
+              </span>
             </p>
           )}
           <p className="text-sm whitespace-pre-wrap text-[var(--color-ink-muted)] leading-relaxed">
@@ -94,7 +115,10 @@ function EmailCard({
       {/* Actions */}
       {!editing && (
         <div className="flex items-center gap-2">
-          <button onClick={() => setEditing(true)} className="sketch-btn text-xs">
+          <button
+            onClick={() => setEditing(true)}
+            className="sketch-btn text-xs"
+          >
             <Pencil size={11} /> Edit
           </button>
           <button
@@ -136,33 +160,46 @@ export default function Outreach() {
 
   const utils = trpc.useUtils();
   const { data: contactsData } = trpc.contacts.list.useQuery({ limit: 200 });
-  const { data: allDrafts, isLoading: draftsLoading, refetch: refetchDrafts } = trpc.emailDrafts.list.useQuery({});
+  const {
+    data: allDrafts,
+    isLoading: draftsLoading,
+    refetch: refetchDrafts,
+  } = trpc.emailDrafts.list.useQuery({});
 
   const generateMutation = trpc.emailDrafts.generate.useMutation({
     onSuccess: () => {
       refetchDrafts();
       toast.success("Email draft generated — review it below");
     },
-    onError: (e) => toast.error(e.message),
+    onError: e => toast.error(e.message),
   });
 
   const approveMutation = trpc.emailDrafts.approve.useMutation({
-    onSuccess: () => { refetchDrafts(); toast.success("Draft approved"); },
-    onError: (e) => toast.error(e.message),
+    onSuccess: () => {
+      refetchDrafts();
+      toast.success("Draft approved");
+    },
+    onError: e => toast.error(e.message),
   });
 
   const updateMutation = trpc.emailDrafts.update.useMutation({
-    onSuccess: () => { refetchDrafts(); toast.success("Draft saved"); },
-    onError: (e) => toast.error(e.message),
+    onSuccess: () => {
+      refetchDrafts();
+      toast.success("Draft saved");
+    },
+    onError: e => toast.error(e.message),
   });
 
   const contacts = contactsData?.contacts ?? [];
-  const contactMap = Object.fromEntries(contacts.map((c) => [c.id.toString(), c.name]));
+  const contactMap = Object.fromEntries(
+    contacts.map(c => [c.id.toString(), c.name])
+  );
   const drafts = allDrafts ?? [];
-  const filteredDrafts = typeFilter === "all" ? drafts : drafts.filter((d) => d.type === typeFilter);
+  const filteredDrafts =
+    typeFilter === "all" ? drafts : drafts.filter(d => d.type === typeFilter);
 
-  const approvedCount = drafts.filter((d) => d.status === "approved").length;
-  const pendingCount = drafts.filter((d) => d.status !== "approved").length;
+  const approvedCount = drafts.filter(d => d.status === "approved").length;
+  const pendingCount = drafts.filter(d => d.status !== "approved").length;
 
   return (
     <div className="min-h-screen paper-bg">
@@ -201,27 +238,31 @@ export default function Outreach() {
         </div>
       </div>
 
-      <div className="px-8 py-6 space-y-6 max-w-4xl">
+      <div className="mx-auto w-full max-w-5xl space-y-6 px-5 py-6 sm:px-8">
         {/* Generator panel */}
         <div className="sketch-card p-5">
           <div className="flex items-center gap-2 mb-4">
             <DoodleSparkle size={16} className="text-[var(--color-ink)]" />
-            <span className="text-sm font-semibold text-[var(--color-ink)]">Generate New Draft</span>
+            <span className="text-sm font-semibold text-[var(--color-ink)]">
+              Generate New Draft
+            </span>
           </div>
 
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex-1 min-w-[200px]">
-              <p className="text-xs font-mono text-[var(--color-ink-muted)] mb-1.5">Contact</p>
+              <p className="text-xs font-mono text-[var(--color-ink-muted)] mb-1.5">
+                Contact
+              </p>
               <Select
                 value={selectedContact || "none"}
-                onValueChange={(v) => setSelectedContact(v === "none" ? "" : v)}
+                onValueChange={v => setSelectedContact(v === "none" ? "" : v)}
               >
                 <SelectTrigger className="sketch-input h-9 text-sm w-full">
                   <SelectValue placeholder="Select a contact..." />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Select a contact...</SelectItem>
-                  {contacts.map((c) => (
+                  {contacts.map(c => (
                     <SelectItem key={c.id} value={c.id.toString()}>
                       {c.name} — {c.firm ?? "?"} ({c.bankingGroup ?? "?"})
                     </SelectItem>
@@ -231,8 +272,13 @@ export default function Outreach() {
             </div>
 
             <div className="w-44">
-              <p className="text-xs font-mono text-[var(--color-ink-muted)] mb-1.5">Email Type</p>
-              <Select value={emailType} onValueChange={(v) => setEmailType(v as EmailDraftType)}>
+              <p className="text-xs font-mono text-[var(--color-ink-muted)] mb-1.5">
+                Email Type
+              </p>
+              <Select
+                value={emailType}
+                onValueChange={v => setEmailType(v as EmailDraftType)}
+              >
                 <SelectTrigger className="sketch-input h-9 text-sm w-full">
                   <SelectValue />
                 </SelectTrigger>
@@ -245,8 +291,14 @@ export default function Outreach() {
 
             <button
               onClick={() => {
-                if (!selectedContact) { toast.error("Select a contact first"); return; }
-                generateMutation.mutate({ contactId: parseInt(selectedContact), type: emailType });
+                if (!selectedContact) {
+                  toast.error("Select a contact first");
+                  return;
+                }
+                generateMutation.mutate({
+                  contactId: parseInt(selectedContact),
+                  type: emailType,
+                });
               }}
               disabled={!selectedContact || generateMutation.isPending}
               className="sketch-btn sketch-btn-primary h-9 disabled:opacity-40"
@@ -262,7 +314,8 @@ export default function Outreach() {
           </div>
 
           <p className="text-[10px] font-mono text-[var(--color-ink-faint)] mt-3 flex items-center gap-1">
-            <span className="text-amber-500">⚠</span> All drafts require your review and approval before use. No emails are sent automatically.
+            <span className="text-amber-500">⚠</span> All drafts require your
+            review and approval before use. No emails are sent automatically.
           </p>
         </div>
 
@@ -271,7 +324,13 @@ export default function Outreach() {
           <p className="text-xs font-mono font-semibold uppercase tracking-widest text-[var(--color-ink-faint)] mr-2">
             Filter:
           </p>
-          {["all", "cold_outreach", "follow_up", "thank_you", "referral_ask"].map((t) => (
+          {[
+            "all",
+            "cold_outreach",
+            "follow_up",
+            "thank_you",
+            "referral_ask",
+          ].map(t => (
             <button
               key={t}
               onClick={() => setTypeFilter(t)}
@@ -281,7 +340,9 @@ export default function Outreach() {
                   : "border-[var(--color-border-dark)] text-[var(--color-ink-muted)] hover:border-[var(--color-ink-muted)]"
               }`}
             >
-              {t === "all" ? "All" : EMAIL_TYPE_LABELS[t as EmailDraftType] ?? t}
+              {t === "all"
+                ? "All"
+                : (EMAIL_TYPE_LABELS[t as EmailDraftType] ?? t)}
             </button>
           ))}
         </div>
@@ -300,21 +361,33 @@ export default function Outreach() {
             </div>
           ) : filteredDrafts.length === 0 ? (
             <div className="sketch-card p-10 text-center">
-              <Mail size={28} className="text-[var(--color-ink-faint)] mx-auto mb-3" />
-              <p className="text-sm text-[var(--color-ink-muted)]">No email drafts yet.</p>
+              <Mail
+                size={28}
+                className="text-[var(--color-ink-faint)] mx-auto mb-3"
+              />
+              <p className="text-sm text-[var(--color-ink-muted)]">
+                No email drafts yet.
+              </p>
               <p className="text-xs font-mono text-[var(--color-ink-faint)] mt-1">
                 Select a contact above and generate your first draft.
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredDrafts.map((draft) => (
+              {filteredDrafts.map(draft => (
                 <EmailCard
                   key={draft.id}
                   draft={draft}
-                  contactName={contactMap[draft.contactId.toString()] ?? `Contact #${draft.contactId}`}
-                  onApprove={(id, subject, body) => approveMutation.mutate({ id, subject, body })}
-                  onUpdate={(id, subject, body) => updateMutation.mutate({ id, subject, body })}
+                  contactName={
+                    contactMap[draft.contactId.toString()] ??
+                    `Contact #${draft.contactId}`
+                  }
+                  onApprove={(id, subject, body) =>
+                    approveMutation.mutate({ id, subject, body })
+                  }
+                  onUpdate={(id, subject, body) =>
+                    updateMutation.mutate({ id, subject, body })
+                  }
                 />
               ))}
             </div>

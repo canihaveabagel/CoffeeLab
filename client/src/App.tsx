@@ -18,15 +18,19 @@ import Settings from "./pages/Settings";
 import Onboarding from "./pages/Onboarding";
 import Notebook from "./pages/Notebook";
 import { trpc } from "./lib/trpc";
-import { Home } from "lucide-react";
-import { Link } from "wouter";
 
 function OnboardingGate({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
-  const { data: profile, isLoading } = trpc.user.getProfile.useQuery(undefined, { retry: false });
+  const { data: profile, isLoading } = trpc.user.getProfile.useQuery(
+    undefined,
+    { retry: false }
+  );
   const needsOnboarding = Boolean(
     profile &&
-    (!profile.onboardingCompleted || !profile.school || !profile.recruitingSeason || !profile.recruitingRegion),
+      (!profile.onboardingCompleted ||
+        !profile.school ||
+        !profile.recruitingSeason ||
+        !profile.recruitingRegion)
   );
 
   useEffect(() => {
@@ -35,7 +39,13 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
   }, [isLoading, location, needsOnboarding, setLocation]);
 
   if (location !== "/onboarding" && (isLoading || needsOnboarding)) {
-    return <div className="flex h-screen items-center justify-center paper-bg"><p className="font-mono text-sm text-[var(--color-ink-muted)]">Preparing your workspace…</p></div>;
+    return (
+      <div className="flex h-screen items-center justify-center paper-bg">
+        <p className="font-mono text-sm text-[var(--color-ink-muted)]">
+          Preparing your workspace…
+        </p>
+      </div>
+    );
   }
   return children;
 }
@@ -52,7 +62,6 @@ function Router() {
       <Route path="/outreach" component={Outreach} />
       <Route path="/recommendations" component={Recommendations} />
       <Route path="/settings" component={Settings} />
-      <Route path="/onboarding" component={Onboarding} />
       <Route path="/notebook" component={Notebook} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
@@ -60,16 +69,14 @@ function Router() {
   );
 }
 
-function HomeShortcut() {
+function WorkspaceShell() {
   const [location] = useLocation();
-  if (location === "/" || location === "/onboarding") return null;
+  if (location === "/onboarding") return <Onboarding />;
 
   return (
-    <Link href="/">
-      <span className="fixed bottom-5 right-5 z-50 sketch-btn sketch-btn-primary shadow-[2px_2px_0_0_var(--color-ink)]">
-        <Home size={14} /> Home
-      </span>
-    </Link>
+    <DashboardLayout>
+      <Router />
+    </DashboardLayout>
   );
 }
 
@@ -80,8 +87,9 @@ function App() {
         <ThemeProvider defaultTheme="light">
           <TooltipProvider>
             <Toaster theme="light" position="top-right" />
-            <HomeShortcut />
-            <OnboardingGate><Router /></OnboardingGate>
+            <OnboardingGate>
+              <WorkspaceShell />
+            </OnboardingGate>
           </TooltipProvider>
         </ThemeProvider>
       </LanguageProvider>

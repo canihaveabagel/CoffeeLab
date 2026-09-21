@@ -1,4 +1,8 @@
-import { DoodleMagnifier, DoodleSparkle, DoodleUpload } from "@/components/DoodleIcons";
+import {
+  DoodleMagnifier,
+  DoodleSparkle,
+  DoodleUpload,
+} from "@/components/DoodleIcons";
 import { trpc } from "@/lib/trpc";
 import {
   BANKING_GROUPS,
@@ -7,7 +11,14 @@ import {
   TOP_FIRMS,
 } from "@/lib/types";
 import type { ContactStatus } from "@/lib/types";
-import { AlertTriangle, ChevronDown, ChevronUp, ExternalLink, Trash2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
@@ -36,10 +47,17 @@ function ConfirmDialog({
       <div className="absolute inset-0 bg-black/30" onClick={onCancel} />
       <div className="relative sketch-card w-full max-w-sm mx-4 p-6 z-10">
         <div className="flex items-start gap-3 mb-4">
-          <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <AlertTriangle
+            size={18}
+            className="text-red-500 flex-shrink-0 mt-0.5"
+          />
           <div>
-            <h3 className="text-sm font-bold text-[var(--color-ink)]">{title}</h3>
-            <p className="text-xs text-[var(--color-ink-muted)] mt-1">{description}</p>
+            <h3 className="text-sm font-bold text-[var(--color-ink)]">
+              {title}
+            </h3>
+            <p className="text-xs text-[var(--color-ink-muted)] mt-1">
+              {description}
+            </p>
           </div>
         </div>
         <div className="flex items-center justify-end gap-2">
@@ -87,7 +105,7 @@ export default function Contacts() {
 
   const updateStatusMutation = trpc.contacts.update.useMutation({
     onSuccess: () => utils.contacts.list.invalidate(),
-    onError: (e) => toast.error("Failed to update status: " + e.message),
+    onError: e => toast.error("Failed to update status: " + e.message),
   });
 
   const deleteMutation = trpc.contacts.delete.useMutation({
@@ -97,7 +115,7 @@ export default function Contacts() {
       utils.dashboard.stats.invalidate();
       setDeleteTargetId(null);
     },
-    onError: (err) => {
+    onError: err => {
       toast.error("Failed to delete: " + err.message);
       setDeleteTargetId(null);
     },
@@ -110,7 +128,7 @@ export default function Contacts() {
       utils.dashboard.stats.invalidate();
       setShowDeleteAll(false);
     },
-    onError: (err) => {
+    onError: err => {
       toast.error("Failed to delete all: " + err.message);
       setShowDeleteAll(false);
     },
@@ -122,7 +140,7 @@ export default function Contacts() {
 
   function toggleSort(field: SortField) {
     if (sortBy === field) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      setSortDir(d => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortBy(field);
       setSortDir("desc");
@@ -131,8 +149,13 @@ export default function Contacts() {
   }
 
   function SortIcon({ field }: { field: SortField }) {
-    if (sortBy !== field) return <ChevronDown size={10} className="opacity-30" />;
-    return sortDir === "asc" ? <ChevronUp size={10} /> : <ChevronDown size={10} />;
+    if (sortBy !== field)
+      return <ChevronDown size={10} className="opacity-30" />;
+    return sortDir === "asc" ? (
+      <ChevronUp size={10} />
+    ) : (
+      <ChevronDown size={10} />
+    );
   }
 
   const hasFilters = search || statusFilter || groupFilter || firmFilter;
@@ -146,7 +169,8 @@ export default function Contacts() {
         description="This will permanently remove the contact and all associated coffee chat data. This cannot be undone."
         confirmLabel="Delete Contact"
         onConfirm={() => {
-          if (deleteTargetId !== null) deleteMutation.mutate({ id: deleteTargetId });
+          if (deleteTargetId !== null)
+            deleteMutation.mutate({ id: deleteTargetId });
         }}
         onCancel={() => setDeleteTargetId(null)}
       />
@@ -206,17 +230,17 @@ export default function Contacts() {
               type="text"
               placeholder="Search name, firm, school…"
               value={search}
-              onChange={(e) => {
+              onChange={e => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="sketch-input pl-8 w-52 text-xs"
+              className="sketch-input sketch-input-with-icon w-52 text-xs"
             />
           </div>
 
           <select
             value={statusFilter}
-            onChange={(e) => {
+            onChange={e => {
               setStatusFilter(e.target.value);
               setPage(1);
             }}
@@ -232,14 +256,14 @@ export default function Contacts() {
 
           <select
             value={groupFilter}
-            onChange={(e) => {
+            onChange={e => {
               setGroupFilter(e.target.value);
               setPage(1);
             }}
             className="sketch-input w-44 text-xs"
           >
             <option value="">All groups</option>
-            {BANKING_GROUPS.map((g) => (
+            {BANKING_GROUPS.map(g => (
               <option key={g} value={g}>
                 {g}
               </option>
@@ -248,14 +272,14 @@ export default function Contacts() {
 
           <select
             value={firmFilter}
-            onChange={(e) => {
+            onChange={e => {
               setFirmFilter(e.target.value);
               setPage(1);
             }}
             className="sketch-input w-44 text-xs"
           >
             <option value="">All firms</option>
-            {TOP_FIRMS.map((f) => (
+            {TOP_FIRMS.map(f => (
               <option key={f} value={f}>
                 {f}
               </option>
@@ -353,11 +377,13 @@ export default function Contacts() {
                     </td>
                   </tr>
                 ) : (
-                  contacts.map((c) => (
+                  contacts.map(c => (
                     <tr
                       key={c.id}
                       className="cursor-pointer"
-                      onClick={() => (window.location.href = `/contacts/${c.id}`)}
+                      onClick={() =>
+                        (window.location.href = `/contacts/${c.id}`)
+                      }
                     >
                       <td>
                         <div className="flex items-center gap-2">
@@ -390,10 +416,10 @@ export default function Contacts() {
                       <td className="text-xs text-[var(--color-ink-muted)]">
                         {c.school ?? "—"}
                       </td>
-                      <td onClick={(e) => e.stopPropagation()}>
+                      <td onClick={e => e.stopPropagation()}>
                         <select
                           value={c.status ?? "not_started"}
-                          onChange={(e) => {
+                          onChange={e => {
                             updateStatusMutation.mutate({
                               id: c.id,
                               status: e.target.value as ContactStatus,
@@ -403,14 +429,16 @@ export default function Contacts() {
                           style={{ appearance: "auto" }}
                         >
                           {Object.entries(STATUS_LABELS).map(([val, label]) => (
-                            <option key={val} value={val}>{label}</option>
+                            <option key={val} value={val}>
+                              {label}
+                            </option>
                           ))}
                         </select>
                       </td>
                       <td>
                         <div
                           className="flex items-center justify-end gap-1"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={e => e.stopPropagation()}
                         >
                           {c.linkedinUrl && (
                             <a
@@ -457,7 +485,7 @@ export default function Contacts() {
               </p>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page === 1}
                   className="sketch-btn text-xs disabled:opacity-40"
                 >
@@ -467,7 +495,7 @@ export default function Contacts() {
                   {page} / {totalPages}
                 </span>
                 <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={page === totalPages}
                   className="sketch-btn text-xs disabled:opacity-40"
                 >

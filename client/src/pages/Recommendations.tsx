@@ -1,24 +1,51 @@
 import { trpc } from "@/lib/trpc";
 import { STATUS_LABELS, STATUS_CLASSES } from "@/lib/types";
-import { DoodleSparkle, DoodleHandshake, DoodleArrow } from "@/components/DoodleIcons";
+import {
+  DoodleSparkle,
+  DoodleHandshake,
+  DoodleArrow,
+} from "@/components/DoodleIcons";
 import { ArrowRight, RefreshCw, Target } from "lucide-react";
 import { useLocation } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
-const REASON_STYLES: Record<string, { bg: string; border: string; text: string }> = {
-  coverage_gap:       { bg: "bg-blue-50",    border: "border-blue-200",    text: "text-blue-800" },
-  mentioned_in_chat:  { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-800" },
-  strong_background:  { bg: "bg-amber-50",   border: "border-amber-200",   text: "text-amber-800" },
-  no_recent_contact:  { bg: "bg-orange-50",  border: "border-orange-200",  text: "text-orange-800" },
-  referral_potential: { bg: "bg-violet-50",  border: "border-violet-200",  text: "text-violet-800" },
+const REASON_STYLES: Record<
+  string,
+  { bg: string; border: string; text: string }
+> = {
+  coverage_gap: {
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    text: "text-blue-800",
+  },
+  mentioned_in_chat: {
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    text: "text-emerald-800",
+  },
+  strong_background: {
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    text: "text-amber-800",
+  },
+  no_recent_contact: {
+    bg: "bg-orange-50",
+    border: "border-orange-200",
+    text: "text-orange-800",
+  },
+  referral_potential: {
+    bg: "bg-violet-50",
+    border: "border-violet-200",
+    text: "text-violet-800",
+  },
 };
 
 const REASON_LABELS: Record<string, string> = {
-  coverage_gap:       "Coverage Gap",
-  mentioned_in_chat:  "Mentioned in Chat",
-  strong_background:  "Strong Background Match",
-  no_recent_contact:  "No Recent Contact",
+  coverage_gap: "Coverage Gap",
+  mentioned_in_chat: "Mentioned in Chat",
+  strong_background: "Strong Background Match",
+  no_recent_contact: "No Recent Contact",
   referral_potential: "Referral Potential",
 };
 
@@ -46,7 +73,10 @@ export default function Recommendations() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-[var(--color-ink)] flex items-center gap-2">
-              <DoodleHandshake size={24} className="text-[var(--color-ink-muted)]" />
+              <DoodleHandshake
+                size={24}
+                className="text-[var(--color-ink-muted)]"
+              />
               Recommendations
             </h1>
             <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">
@@ -71,15 +101,24 @@ export default function Recommendations() {
         </div>
       </div>
 
-      <div className="px-8 py-6 max-w-3xl space-y-5">
+      <div className="mx-auto w-full max-w-4xl space-y-5 px-5 py-6 sm:px-8">
         {/* How it works */}
         <div className="sketch-card p-4">
           <div className="flex items-start gap-3">
-            <Target size={16} className="text-[var(--color-ink-muted)] flex-shrink-0 mt-0.5" />
+            <Target
+              size={16}
+              className="text-[var(--color-ink-muted)] flex-shrink-0 mt-0.5"
+            />
             <div>
-              <p className="text-xs font-semibold text-[var(--color-ink)] mb-1">How recommendations work</p>
+              <p className="text-xs font-semibold text-[var(--color-ink)] mb-1">
+                How recommendations work
+              </p>
               <p className="text-xs text-[var(--color-ink-muted)] leading-relaxed">
-                The engine analyzes your contact coverage across groups and firms, identifies bankers mentioned in past coffee chats, surfaces contacts with strong background overlap you haven't reached out to, and flags people you haven't followed up with recently.
+                The engine analyzes your contact coverage across groups and
+                firms, identifies bankers mentioned in past coffee chats,
+                surfaces contacts with strong background overlap you haven't
+                reached out to, and flags people you haven't followed up with
+                recently.
               </p>
             </div>
           </div>
@@ -98,13 +137,17 @@ export default function Recommendations() {
               {recs.length} Suggestions
             </p>
             {recs.map((rec, idx) => {
-              const reasonStyle = REASON_STYLES[rec.sourceType] ?? { bg: "bg-gray-50", border: "border-gray-200", text: "text-gray-700" };
+              const reasonStyle = REASON_STYLES[rec.sourceType] ?? {
+                bg: "bg-gray-50",
+                border: "border-gray-200",
+                text: "text-gray-700",
+              };
               const priorityStyle =
                 rec.priority === "high"
                   ? "bg-emerald-50 border-emerald-200 text-emerald-800"
                   : rec.priority === "medium"
-                  ? "bg-amber-50 border-amber-200 text-amber-800"
-                  : "bg-gray-50 border-gray-200 text-gray-700";
+                    ? "bg-amber-50 border-amber-200 text-amber-800"
+                    : "bg-gray-50 border-gray-200 text-gray-700";
 
               return (
                 <div
@@ -125,13 +168,23 @@ export default function Recommendations() {
                             {rec.contactName}
                           </p>
                           <p className="text-xs font-mono text-[var(--color-ink-muted)] mt-0.5">
-                            {[rec.contactRole, rec.contactGroup, rec.contactFirm].filter(Boolean).join(" · ")}
+                            {[
+                              rec.contactRole,
+                              rec.contactGroup,
+                              rec.contactFirm,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </p>
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           {rec.contactStatus && (
-                            <span className={`sketch-tag text-[10px] hidden sm:inline-flex ${STATUS_CLASSES[rec.contactStatus as keyof typeof STATUS_CLASSES] ?? ""}`}>
-                              {STATUS_LABELS[rec.contactStatus as keyof typeof STATUS_LABELS] ?? rec.contactStatus}
+                            <span
+                              className={`sketch-tag text-[10px] hidden sm:inline-flex ${STATUS_CLASSES[rec.contactStatus as keyof typeof STATUS_CLASSES] ?? ""}`}
+                            >
+                              {STATUS_LABELS[
+                                rec.contactStatus as keyof typeof STATUS_LABELS
+                              ] ?? rec.contactStatus}
                             </span>
                           )}
                         </div>
@@ -139,10 +192,14 @@ export default function Recommendations() {
 
                       {/* Reason tags */}
                       <div className="flex flex-wrap gap-1.5 mt-2">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${reasonStyle.bg} ${reasonStyle.border} ${reasonStyle.text}`}>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${reasonStyle.bg} ${reasonStyle.border} ${reasonStyle.text}`}
+                        >
                           {REASON_LABELS[rec.sourceType] ?? rec.sourceType}
                         </span>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${priorityStyle}`}>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-semibold border ${priorityStyle}`}
+                        >
                           {rec.priority} priority
                         </span>
                       </div>
@@ -156,13 +213,19 @@ export default function Recommendations() {
                       {/* Actions */}
                       <div className="flex items-center gap-2 mt-3">
                         <button
-                          onClick={(e) => { e.stopPropagation(); setLocation(`/contacts/${rec.contactId}`); }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            setLocation(`/contacts/${rec.contactId}`);
+                          }}
                           className="sketch-btn text-xs"
                         >
                           View Profile <ArrowRight size={11} />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); setLocation(`/outreach?contactId=${rec.contactId}`); }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            setLocation(`/outreach?contactId=${rec.contactId}`);
+                          }}
                           className="sketch-btn sketch-btn-primary text-xs"
                         >
                           <DoodleSparkle size={11} /> Generate Outreach
@@ -176,10 +239,16 @@ export default function Recommendations() {
           </div>
         ) : (
           <div className="sketch-card p-10 text-center">
-            <DoodleHandshake size={36} className="text-[var(--color-ink-faint)] mx-auto mb-3" />
-            <p className="text-sm font-medium text-[var(--color-ink-muted)]">No recommendations yet.</p>
+            <DoodleHandshake
+              size={36}
+              className="text-[var(--color-ink-faint)] mx-auto mb-3"
+            />
+            <p className="text-sm font-medium text-[var(--color-ink-muted)]">
+              No recommendations yet.
+            </p>
             <p className="text-xs font-mono text-[var(--color-ink-faint)] mt-1 mb-4">
-              Add contacts and log coffee chats to generate personalized suggestions.
+              Add contacts and log coffee chats to generate personalized
+              suggestions.
             </p>
             <button
               onClick={() => generateMutation.mutate()}
