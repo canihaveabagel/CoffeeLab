@@ -120,7 +120,6 @@ scripts/test-supabase*.mjs
 references/
 todo.md
 template.json
-vitest.config.ts
 client/index.html
 client/public/__manus__/
 drizzle/0*.sql
