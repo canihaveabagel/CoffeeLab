@@ -104,7 +104,7 @@ React client
 ### Prerequisites
 
 - Node.js 22 or newer
-- pnpm 10 or newer
+- pnpm 10.4.1 (the version pinned in `package.json`; Corepack is recommended)
 - An Anthropic API key for AI features
 
 ### Setup
@@ -112,6 +112,8 @@ React client
 ```bash
 git clone https://github.com/canihaveabagel/coffeelab.git
 cd coffeelab
+corepack enable
+corepack prepare pnpm@10.4.1 --activate
 pnpm install
 cp .env.example .env.local
 ```
