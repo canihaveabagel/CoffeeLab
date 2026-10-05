@@ -28,7 +28,7 @@ Start by saving your background and recruiting targets: school, major, graduatio
 
 ### 1. Build a network you can remember
 
-Add contacts manually or import Excel, CSV, or TSV, including existing notes. Review detected columns before importing. Onboarding offers the same import step, followed by a required ten-step first-use tour. Completion is saved to the account, and the tour can be replayed later.
+Add contacts manually or import Excel, CSV, or TSV, including existing notes. Review detected columns before importing. New users receive a ten-step tour once after their first onboarding. Existing users are not automatically shown the tour. Completion is saved to the account, and anyone can replay it from the sidebar.
 
 ![CoffeeLab contacts workspace with fictional demonstration contacts](docs/screenshots/contacts.png)
 
