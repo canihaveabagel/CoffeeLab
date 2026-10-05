@@ -1,217 +1,90 @@
+<p align="center">
+  <img src="docs/brand/03-conversation-cup.png" alt="CoffeeLab conversation cup" width="112" />
+</p>
+
 # CoffeeLab
 
-**AI relationship memory for recruiting.** CoffeeLab is an open-source CRM for students who use coffee chats to build genuine professional relationships. It keeps contacts, conversations, recruiting deadlines, takeaways, and follow-ups in one focused workspace.
+**Remember the conversation. Make the next one better.**
 
-![CoffeeLab — AI relationship memory for recruiting](public/og.png)
+A recruiting relationship workspace for students turning coffee chats into lasting professional connections. CoffeeLab brings contacts, conversation notes, useful takeaways, and thoughtful follow-ups into one place.
 
-> CoffeeLab is currently optimized for investment-banking recruiting, but its contact and conversation workflow can be adapted for consulting, venture capital, and other relationship-driven searches.
+[Explore the product](https://coffeelab-recruiting.ryleelin.chatgpt.site/about) · [Open CoffeeLab](https://coffeelab-recruiting.ryleelin.chatgpt.site/) · [About the author](https://github.com/canihaveabagel)
 
-## Why CoffeeLab
+> **Repository scope:** This public repository contains an earlier CoffeeLab prototype. The screenshots and product walkthrough below describe the current hosted application, which has evolved beyond this codebase. Its newer backend and deployment configuration are private; cloning this repository will not reproduce the live product.
 
-Recruiting information is usually scattered across spreadsheets, LinkedIn, calendar notes, transcripts, and half-finished email drafts. CoffeeLab turns that fragmented process into a repeatable loop:
+Looking for the original prototype documentation? See [the archived prototype README](docs/prototype-setup.md).
 
-1. Add or import the people you want to know.
-2. Record a coffee chat from a transcript, notes, or a document.
-3. Extract detailed, source-grounded takeaways with Claude.
-4. Save the most important insights in a searchable notebook.
-5. Draft a thoughtful thank-you, follow-up, or referral request.
-6. Return to the dashboard for the next action and relevant recruiting timeline.
+## The problem
 
-## Features
+A good coffee chat leaves you with more than a name and an email address: a perspective on a team, a recruiting tip, an introduction, or a reason to follow up. Those details are easy to lose across spreadsheets, documents, and inboxes.
 
-### Recruiting CRM
+CoffeeLab keeps each conversation connected to the person and the student's goals, so the next message can begin with something specific.
 
-- Track contacts by firm, group, role, industry, school, status, and last-contact date.
-- Search, filter, sort, edit, and remove contacts from a spreadsheet-style view.
-- Import multiple contacts from CSV/TSV data with column mapping, or add them manually.
-- Store useful relationship context such as hometown, clubs, shared school, LinkedIn URL, and notes.
-- Keep each user's records isolated behind authenticated server procedures.
+## Product walkthrough
 
-### Coffee-chat workspace
+Start by saving your background and recruiting targets: school, major, graduation year, industry, firms, teams, region, and recruiting season. Those preferences guide relevant takeaways, outreach, and recruiting searches.
 
-- Log a conversation against an existing contact.
-- Paste a transcript, write notes, or upload a PDF, TXT, or Markdown document (up to 8 MB).
-- Re-run analysis when the source changes.
-- Review the original source beside the extracted insights.
-- Generate post-chat thank-you and referral-request drafts from the conversation.
+### 1. Build a network you can remember
 
-### AI takeaways
+Add contacts manually or import a CSV. Track outreach stages, professional details, notes, and conversation history in one place.
 
-CoffeeLab uses the Anthropic Messages API to convert a conversation into structured, editable insights. The model is instructed to preserve uncertainty, avoid unsupported claims, and separate distinct ideas into individual bullets.
+![CoffeeLab contacts workspace with fictional demonstration contacts](docs/screenshots/contacts.png)
 
-Takeaways are organized into:
+### 2. Capture the conversation
 
-- Industry
-- Firm
-- Group
-- Recruiting
-- Technical Prep
-- Personal Growth
-- Referral Signal
-- Next Person to Meet
+Log a chat against a contact using a pasted transcript, written notes, or a PDF, TXT, or Markdown document. Keep the source available alongside the analysis so you can revisit what was actually said.
 
-PDF and transcript extraction use Claude Haiku 4.5 for lower latency and cost. General drafting uses the configurable `ANTHROPIC_MODEL` value (Claude Sonnet 4.6 by default).
+![CoffeeLab coffee-chat workspace showing a fictional conversation and its takeaways](docs/screenshots/coffee-chat.png)
 
-### Recruiting notebook
+### 3. Turn notes into a useful notebook
 
-- Aggregate takeaways across every coffee chat.
-- Filter by category, firm, or key-insight status.
-- Switch between chronological and grouped views.
-- Edit, copy, and star insights without changing the original transcript.
-- See the exact number of insights, not just the number of chats.
+AI extracts individual takeaways into categories such as recruiting, technical preparation, firm insights, and people mentioned in a chat. Browse and filter across conversations, edit an insight, or mark it as especially useful.
 
-### Outreach drafting
+![CoffeeLab notebook with categorized takeaways from fictional conversations](docs/screenshots/notebook.png)
 
-- Create cold-outreach and follow-up emails for a selected contact.
-- Personalize drafts from shared school, hometown, club, firm, and group context.
-- Edit and approve every draft before using it.
-- Open the final draft in Gmail; CoffeeLab does not send email automatically.
+### 4. Follow up with context
 
-### Personalized onboarding and dashboard
+Draft cold outreach from your profile and contact details, or create follow-up, thank-you, and referral messages using a saved conversation. Review and edit the result before sending it yourself.
 
-- Capture the user's name, school, major, class year, recruiting season, target firm/group, and recruiting region.
-- Show CRM totals, follow-ups, completed chats, and recently contacted people.
-- Surface region-specific recruiting milestones for the US, UK, Continental Europe, Hong Kong/APAC, or multiple regions.
-- Link to live application trackers and guides from [The Trackr](https://the-trackr.com/).
+![CoffeeLab outreach workspace showing an editable example email draft](docs/screenshots/outreach.png)
 
-### Experimental recommendations
+*All people, conversations, and messages shown in these screenshots are fictional demonstration data.*
 
-CoffeeLab includes an early relationship-recommendation workflow that can prioritize untouched contacts, identify coverage gaps, and surface people mentioned during past chats. Treat this feature as experimental; the primary production workflow is the CRM, coffee-chat analysis, notebook, and outreach drafting.
+The **recruiting radar** extends this workflow with relevant application pages, deadlines, and recent news. Each result includes a source link, matching explanation, evidence excerpt, and freshness information. An hourly cloud task rotates through eligible preference feeds; the interface shows each feed's actual last successful check.
 
-## Tech stack
+## Design decisions
 
-| Layer | Technology |
-| --- | --- |
-| Frontend | React 19, TypeScript, Tailwind CSS, Radix UI |
-| Application runtime | Next.js-compatible Vinext on OpenAI Sites |
-| API | tRPC, Zod, SuperJSON |
-| Data | Cloudflare D1 (SQLite), Drizzle ORM |
-| AI | Anthropic Messages API with structured JSON output |
-| Hosting and auth | OpenAI Sites |
+- **Make AI output reviewable.** Saved conversation text stays available, takeaways remain editable, and drafting instructions require supplied facts. A suggested introduction or referral signal needs explicit support in the source.
+- **Connect memory to action.** Contacts, chats, takeaways, and drafts share context, reducing the work of reconstructing a conversation before writing a follow-up.
+- **Keep the person in control.** CoffeeLab generates drafts; users decide what to send. It does not send emails automatically or scrape LinkedIn profiles.
+- **Treat freshness as evidence.** Search discovery time is separate from publication time. An undated posting cannot become a “published within 24 hours” result simply because it was just found.
+- **Make recruiting feel approachable.** A quiet paper-and-charcoal palette, hand-drawn coffee-cup identity, and notebook-inspired interface make a practical workflow feel personal. Typography uses an Aptos-first system font stack without redistributing unlicensed font files.
 
-The browser talks to authenticated tRPC procedures. Those server procedures own all database access and Anthropic calls, so the API key never needs to be exposed to client-side JavaScript.
+## Current hosted architecture
 
-```text
-React client
-    │
-    ├── authenticated tRPC procedures ── Cloudflare D1
-    │
-    └── server-only AI procedures ────── Anthropic Messages API
+The live application uses React and TypeScript, Next.js routing through Vinext/Vite, tRPC, Cloudflare D1, and OpenAI. ChatGPT sign-in is provided through OpenAI Sites.
+
+```mermaid
+flowchart LR
+    User[Student] --> UI[React workspace]
+    Auth[ChatGPT sign-in] --> API[Protected server routes]
+    UI --> API
+    API --> DB[(Cloudflare D1)]
+    API --> AI[OpenAI text, audio, and web search]
+    Refresh[Hourly cloud task] --> API
 ```
 
-## Local development
+Protected routes scope records to the signed-in user. D1 persists profiles, contacts, saved transcript text, takeaways, drafts, and recruiting caches. Server-side usage limits bound AI requests. Failed analysis preserves previous takeaways, and failed recruiting refreshes preserve existing results.
 
-### Prerequisites
+These details describe the hosted application, not the architecture or setup requirements of the older prototype in this repository.
 
-- Node.js 22 or newer
-- pnpm 10.4.1 (the version pinned in `package.json`; Corepack is recommended)
-- An Anthropic API key for AI features
+## Status and limitations
 
-### Setup
+- Text analysis and email generation have been exercised successfully. Audio transcription is implemented, but activation still depends on available OpenAI API billing credits; it should not be treated as a currently verified live feature.
+- When available, audio transcription requires permission to process the recording. CoffeeLab sends audio to OpenAI without storing the original recording. Saved transcript text is retained in the workspace, and OpenAI's processing and retention terms still apply.
+- AI can miss or misinterpret details. Review extracted text, takeaways, names, dates, and drafts before relying on them.
+- Recruiting radar is a discovery aid, not an exhaustive job board. Confirm eligibility, availability, and deadlines on the linked employer page. Hourly scheduling does not guarantee that every profile refreshes every hour.
 
-```bash
-git clone https://github.com/canihaveabagel/coffeelab.git
-cd coffeelab
-corepack enable
-corepack prepare pnpm@10.4.1 --activate
-pnpm install
-cp .env.example .env.local
-```
+## Author
 
-Set your own key in `.env.local`:
-
-```dotenv
-ANTHROPIC_API_KEY=your_anthropic_api_key
-ANTHROPIC_MODEL=claude-sonnet-4-6
-```
-
-Then start the local app:
-
-```bash
-pnpm dev
-```
-
-The local server uses a preview identity for development. The database schema is created automatically against the configured `DB` D1 binding.
-
-### Quality checks
-
-```bash
-pnpm check
-pnpm test
-pnpm build
-```
-
-## Deploying
-
-This repository is configured for OpenAI Sites through `.openai/hosting.json` and expects a Cloudflare D1 binding named `DB`.
-
-For a production deployment:
-
-1. Create or select a Sites project with a D1 database binding named `DB`.
-2. Add `ANTHROPIC_API_KEY` as an encrypted, server-only environment variable.
-3. Optionally set `ANTHROPIC_MODEL` to another supported Anthropic model.
-4. Run the checks above and deploy the exact tested commit.
-5. Keep the deployment private until rate limits, abuse controls, and a privacy policy are in place.
-
-Do not add `NEXT_PUBLIC_` to the Anthropic variable. That would expose the key to browsers.
-
-## Cost and abuse controls
-
-If you host CoffeeLab for other people, their document analyses and generated emails use **your** Anthropic account, tokens, and spending allowance. A public GitHub repository does not create this cost by itself; the cost belongs to whoever operates a deployed instance and supplies its API key.
-
-Before opening a hosted deployment to the public:
-
-- Create a dedicated Anthropic Workspace and key for CoffeeLab.
-- Set a monthly Workspace spend limit and cost notifications.
-- Add per-user quotas, request throttling, and file-frequency limits.
-- Keep the existing server-side file type and size validation.
-- Monitor usage by Workspace and API key.
-- Rotate any key that has appeared in chat, screenshots, issues, or commits.
-
-People who clone and self-host CoffeeLab should provide their own Anthropic key.
-
-## Privacy and security
-
-Coffee-chat transcripts can contain personal or confidential information. Uploaded content is processed by the configured Anthropic account and stored in the deployment's database as part of the user's workspace. Operators should obtain appropriate consent, publish a privacy policy, and define retention/deletion practices before offering the app publicly.
-
-Never commit:
-
-- `.env` or `.env.local`
-- Anthropic API keys
-- database credentials or service-role keys
-- hosting, GitHub, or other access tokens
-
-See [SECURITY.md](SECURITY.md) for the deployment checklist and vulnerability-reporting guidance.
-
-## Project structure
-
-```text
-app/                 Next/Vinext routes and server entry points
-client/src/pages/    CRM, chat, notebook, outreach, and settings screens
-client/src/components/
-drizzle/             D1 schema definitions
-server/              tRPC routers, database access, and Anthropic adapter
-shared/              Shared types and constants
-public/              Public assets
-```
-
-## Contributing
-
-Issues and pull requests are welcome. Please keep changes focused, avoid committing generated secrets or user data, and run `pnpm check`, `pnpm test`, and `pnpm build` before opening a pull request.
-
-Good contribution areas include:
-
-- stronger per-user rate limiting and spend controls
-- transcript redaction and retention controls
-- broader recruiting workflows beyond investment banking
-- improved CSV import validation
-- automated tests for tRPC procedures and document extraction
-- accessibility and responsive-layout improvements
-
-## Attribution
-
-Recruiting timeline links point to public resources from [The Trackr](https://the-trackr.com/). CoffeeLab is not affiliated with or endorsed by The Trackr, Anthropic, OpenAI, or any firm referenced in user data.
-
-## License
-
-CoffeeLab is available under the [MIT License](LICENSE).
+Built by [canihaveabagel](https://github.com/canihaveabagel). CoffeeLab is a portfolio project exploring how product design and applied AI can help people maintain more thoughtful professional relationships.
