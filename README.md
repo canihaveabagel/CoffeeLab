@@ -14,6 +14,8 @@ A recruiting CRM for students turning coffee chats into lasting professional con
 
 Looking for the original prototype documentation? See [the archived prototype README](docs/prototype-setup.md).
 
+**Hosted release:** Version 19, published October 5, 2026. This portfolio walkthrough reflects that release; the public prototype source is not a mirror of the production application.
+
 ## The problem
 
 A good coffee chat leaves you with more than a name and an email address: a perspective on a team, a recruiting tip, an introduction, or a reason to follow up. Those details are easy to lose across spreadsheets, documents, and inboxes.
@@ -34,11 +36,11 @@ Add contacts manually or import Excel, CSV, or TSV, including existing notes. Re
 
 Upload audio, paste a transcript, write notes, or add a PDF, TXT, or Markdown document. Switch between **My notes** and **Enhanced notes** while reviewing concise, categorized takeaways alongside the summary. The source transcript stays folded away until you need it. CoffeeLab does not store original recordings.
 
-![CoffeeLab coffee-chat workspace showing a fictional conversation and its takeaways](docs/screenshots/coffee-chat-v2.jpg)
+![CoffeeLab coffee-chat workspace showing a fictional conversation and color-coded takeaway tags](docs/screenshots/coffee-chat-v3.jpg)
 
 ### 3. Turn notes into a useful notebook
 
-Browse a simple category index, preview pages, and open a topic to explore notes grouped by conversation. Create your own notes and categories, assign multiple hashtags, and star key insights. A point can belong to both Firm and Industry; each chat-derived insight links back to its source. Reanalysis preserves edited, tagged, and starred insights.
+Browse a simple category index, preview pages, and open a topic to explore notes grouped by conversation. Create your own notes and categories, assign multiple color-coded tags, and star key insights. Tags use consistent colors across chats and the notebook, without hashtag prefixes. A point can belong to both Firm and Industry; each chat-derived insight links back to its source. Reanalysis preserves edited, tagged, and starred insights.
 
 ![CoffeeLab notebook with categorized takeaways from fictional conversations](docs/screenshots/notebook-v2.jpg)
 
@@ -51,6 +53,8 @@ Draft cold outreach from your profile and contact details, or create follow-up, 
 *All people, conversations, and messages shown in these screenshots are fictional demonstration data.*
 
 The **recruiting radar** brings together recently verified open roles, upcoming deadlines, and news from the past week in compact, expandable listings. An hourly cloud task rotates through eligible preference feeds. Refreshes merge results instead of replacing the entire list; each retained role shows its own verification date. People mentioned in a conversation link back to that chat for context.
+
+Discovery combines web search with selected employers' public job-board feeds, filtered using recruiting preferences. The feed shows up to 12 entries initially, with more available when matching results exist. It also links to Trackr for additional exploration; CoffeeLab does not scrape or mirror Trackr's database. The Product Analytics screen has been removed from the student workspace.
 
 ## Design decisions
 
@@ -75,6 +79,8 @@ flowchart LR
 ```
 
 Protected routes scope records to the signed-in user. D1 persists profiles, contacts, saved transcript text, takeaways, drafts, and recruiting caches. Server-side usage limits bound AI requests. Failed analysis preserves previous takeaways, and failed recruiting refreshes preserve existing results.
+
+ChatGPT sign-in identifies the user; it does not supply the user's API balance. AI processing uses the deployment operator's server-side OpenAI credentials. Application limits count requests, rather than guaranteeing a fixed dollar budget. API keys, production user records, and private deployment configuration are not published in this repository.
 
 These details describe the hosted application, not the architecture or setup requirements of the older prototype in this repository.
 
