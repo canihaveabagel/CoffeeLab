@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/brand/03-conversation-cup.png" alt="CoffeeLab conversation cup" width="112" />
+  <img src="docs/brand/02-pixel-cup.png" alt="CoffeeLab minimal pixel coffee cup" width="112" />
 </p>
 
 # CoffeeLab
@@ -58,7 +58,7 @@ The **recruiting radar** extends this workflow with relevant application pages, 
 - **Connect memory to action.** Contacts, chats, takeaways, and drafts share context, reducing the work of reconstructing a conversation before writing a follow-up.
 - **Keep the person in control.** CoffeeLab generates drafts; users decide what to send. It does not send emails automatically or scrape LinkedIn profiles.
 - **Treat freshness as evidence.** Search discovery time is separate from publication time. An undated posting cannot become a “published within 24 hours” result simply because it was just found.
-- **Make recruiting feel approachable.** A quiet paper-and-charcoal palette, hand-drawn coffee-cup identity, and notebook-inspired interface make a practical workflow feel personal. Typography uses an Aptos-first system font stack without redistributing unlicensed font files.
+- **Make recruiting feel approachable.** A quiet paper-and-charcoal palette, minimal pixel-cup identity, and notebook-inspired interface make a practical workflow feel personal. Typography uses an Aptos-first system font stack without redistributing unlicensed font files.
 
 ## Current hosted architecture
 
