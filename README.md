@@ -8,13 +8,15 @@
 
 A recruiting CRM for students turning coffee chats into lasting professional connections. CoffeeLab brings contacts, conversation notes, useful takeaways, and thoughtful follow-ups into one place. Today we focus on relationship management; the longer-term vision is a personalized job-search agent that connects your background, goals, opportunities, and network.
 
-[Explore the product](https://coffeelab-recruiting.ryleelin.chatgpt.site/about) · [Open CoffeeLab](https://coffeelab-recruiting.ryleelin.chatgpt.site/) · [About the author](https://github.com/canihaveabagel)
+[Explore the product](https://coffeelab.space/about) · [Open CoffeeLab](https://coffeelab.space/) · [About the author](https://github.com/canihaveabagel)
+
+**Live website:** [coffeelab.space](https://coffeelab.space/). Open it in your browser and select **Open workspace** to sign in. No installation or GitHub account is required to use the hosted product.
 
 > **Repository scope:** This public repository contains an earlier CoffeeLab prototype. The screenshots and product walkthrough below describe the current hosted application, which has evolved beyond this codebase. Its newer backend and deployment configuration are private; cloning this repository will not reproduce the live product.
 
 Looking for the original prototype documentation? See [the archived prototype README](docs/prototype-setup.md).
 
-**Hosted release:** Version 20, published October 5, 2026. This portfolio walkthrough reflects that release; the public prototype source is not a mirror of the production application.
+**Hosted release:** Version 21, published October 5, 2026, now available at **coffeelab.space**. This portfolio walkthrough reflects that release; the public prototype source is not a mirror of the production application.
 
 ## The problem
 
