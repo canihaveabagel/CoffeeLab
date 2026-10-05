@@ -14,7 +14,7 @@ A recruiting CRM for students turning coffee chats into lasting professional con
 
 Looking for the original prototype documentation? See [the archived prototype README](docs/prototype-setup.md).
 
-**Hosted release:** Version 19, published October 5, 2026. This portfolio walkthrough reflects that release; the public prototype source is not a mirror of the production application.
+**Hosted release:** Version 20, published October 5, 2026. This portfolio walkthrough reflects that release; the public prototype source is not a mirror of the production application.
 
 ## The problem
 
@@ -28,7 +28,7 @@ Start by saving your background and recruiting targets: school, major, graduatio
 
 ### 1. Build a network you can remember
 
-Add contacts manually or import Excel, CSV, or TSV, including existing notes. Review detected columns before importing. Onboarding offers the same import step, and a ten-step optional tour introduces the workspace.
+Add contacts manually or import Excel, CSV, or TSV, including existing notes. Review detected columns before importing. Onboarding offers the same import step, followed by a required ten-step first-use tour. Completion is saved to the account, and the tour can be replayed later.
 
 ![CoffeeLab contacts workspace with fictional demonstration contacts](docs/screenshots/contacts.png)
 
@@ -52,9 +52,11 @@ Draft cold outreach from your profile and contact details, or create follow-up, 
 
 *All people, conversations, and messages shown in these screenshots are fictional demonstration data.*
 
-The **recruiting radar** brings together recently verified open roles, upcoming deadlines, and news from the past week in compact, expandable listings. An hourly cloud task rotates through eligible preference feeds. Refreshes merge results instead of replacing the entire list; each retained role shows its own verification date. People mentioned in a conversation link back to that chat for context.
+The **Open roles** feed focuses on recently verified vacancies in compact, expandable listings, without news or separate deadline tabs. An hourly cloud task rotates through preference feeds due for a daily check. Refreshes merge results instead of replacing the entire list; each retained role shows its own verification date. People mentioned in a conversation link back to that chat for context.
 
 Discovery combines web search with selected employers' public job-board feeds, filtered using recruiting preferences. The feed shows up to 12 entries initially, with more available when matching results exist. It also links to Trackr for additional exploration; CoffeeLab does not scrape or mirror Trackr's database. The Product Analytics screen has been removed from the student workspace.
+
+The public introduction page includes **Give us feedback** links in its header, closing call to action and footer, connected to the [CoffeeLab feedback form](https://docs.google.com/forms/d/e/1FAIpQLSeov5nUKCKmJNcDJuLOgWL4DSQgmwPb5I8cUgawfKurevO0lQ/viewform).
 
 ## Design decisions
 
@@ -89,7 +91,7 @@ These details describe the hosted application, not the architecture or setup req
 - CoffeeLab is an early-access trial. Audio transcription, summaries, and email generation have passed real API tests using fictional test material; file-size and usage limits apply.
 - Audio transcription requires permission to process the recording. CoffeeLab sends audio to OpenAI without storing the original recording. Saved transcript text is retained in the workspace, and OpenAI's processing and retention terms still apply.
 - AI can miss or misinterpret details. Review extracted text, takeaways, names, dates, and drafts before relying on them.
-- Recruiting radar is a discovery aid, not an exhaustive job board. Confirm eligibility, availability, and deadlines on the linked employer page. Hourly scheduling does not guarantee that every profile refreshes every hour.
+- Open roles is a discovery aid, not an exhaustive job board. Confirm eligibility, availability, and deadlines on the linked employer page. Daily checks can be delayed by provider failures or shared usage limits when many distinct profiles need updates.
 
 ## Where CoffeeLab is going
 
