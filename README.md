@@ -6,7 +6,7 @@
 
 **Remember the conversation. Make the next one better.**
 
-A recruiting relationship workspace for students turning coffee chats into lasting professional connections. CoffeeLab brings contacts, conversation notes, useful takeaways, and thoughtful follow-ups into one place.
+A recruiting CRM for students turning coffee chats into lasting professional connections. CoffeeLab brings contacts, conversation notes, useful takeaways, and thoughtful follow-ups into one place. Today we focus on relationship management; the longer-term vision is a personalized job-search agent that connects your background, goals, opportunities, and network.
 
 [Explore the product](https://coffeelab-recruiting.ryleelin.chatgpt.site/about) · [Open CoffeeLab](https://coffeelab-recruiting.ryleelin.chatgpt.site/) · [About the author](https://github.com/canihaveabagel)
 
@@ -26,21 +26,21 @@ Start by saving your background and recruiting targets: school, major, graduatio
 
 ### 1. Build a network you can remember
 
-Add contacts manually or import a CSV. Track outreach stages, professional details, notes, and conversation history in one place.
+Add contacts manually or import Excel, CSV, or TSV, including existing notes. Review detected columns before importing. Onboarding offers the same import step, and a ten-step optional tour introduces the workspace.
 
 ![CoffeeLab contacts workspace with fictional demonstration contacts](docs/screenshots/contacts.png)
 
 ### 2. Capture the conversation
 
-Log a chat against a contact using a pasted transcript, written notes, or a PDF, TXT, or Markdown document. Keep the source available alongside the analysis so you can revisit what was actually said.
+Upload audio, paste a transcript, write notes, or add a PDF, TXT, or Markdown document. Switch between **My notes** and **Enhanced notes** while reviewing concise, categorized takeaways alongside the summary. The source transcript stays folded away until you need it. CoffeeLab does not store original recordings.
 
-![CoffeeLab coffee-chat workspace showing a fictional conversation and its takeaways](docs/screenshots/coffee-chat.png)
+![CoffeeLab coffee-chat workspace showing a fictional conversation and its takeaways](docs/screenshots/coffee-chat-v2.jpg)
 
 ### 3. Turn notes into a useful notebook
 
-AI extracts individual takeaways into categories such as recruiting, technical preparation, firm insights, and people mentioned in a chat. Browse and filter across conversations, edit an insight, or mark it as especially useful.
+Browse a simple category index, preview pages, and open a topic to explore notes grouped by conversation. Create your own notes and categories, assign multiple hashtags, and star key insights. A point can belong to both Firm and Industry; each chat-derived insight links back to its source. Reanalysis preserves edited, tagged, and starred insights.
 
-![CoffeeLab notebook with categorized takeaways from fictional conversations](docs/screenshots/notebook.png)
+![CoffeeLab notebook with categorized takeaways from fictional conversations](docs/screenshots/notebook-v2.jpg)
 
 ### 4. Follow up with context
 
@@ -50,14 +50,14 @@ Draft cold outreach from your profile and contact details, or create follow-up, 
 
 *All people, conversations, and messages shown in these screenshots are fictional demonstration data.*
 
-The **recruiting radar** extends this workflow with relevant application pages, deadlines, and recent news. Each result includes a source link, matching explanation, evidence excerpt, and freshness information. An hourly cloud task rotates through eligible preference feeds; the interface shows each feed's actual last successful check.
+The **recruiting radar** brings together recently verified open roles, upcoming deadlines, and news from the past week in compact, expandable listings. An hourly cloud task rotates through eligible preference feeds. Refreshes merge results instead of replacing the entire list; each retained role shows its own verification date. People mentioned in a conversation link back to that chat for context.
 
 ## Design decisions
 
 - **Make AI output reviewable.** Saved conversation text stays available, takeaways remain editable, and drafting instructions require supplied facts. A suggested introduction or referral signal needs explicit support in the source.
 - **Connect memory to action.** Contacts, chats, takeaways, and drafts share context, reducing the work of reconstructing a conversation before writing a follow-up.
 - **Keep the person in control.** CoffeeLab generates drafts; users decide what to send. It does not send emails automatically or scrape LinkedIn profiles.
-- **Treat freshness as evidence.** Search discovery time is separate from publication time. An undated posting cannot become a “published within 24 hours” result simply because it was just found.
+- **Treat freshness as evidence.** Discovery time is separate from publication time. A refreshed feed does not imply every retained posting was reverified. Follow the source before applying.
 - **Make recruiting feel approachable.** A quiet paper-and-charcoal palette, minimal pixel-cup identity, and notebook-inspired interface make a practical workflow feel personal. Typography uses an Aptos-first system font stack without redistributing unlicensed font files.
 
 ## Current hosted architecture
@@ -80,10 +80,26 @@ These details describe the hosted application, not the architecture or setup req
 
 ## Status and limitations
 
-- Text analysis and email generation have been exercised successfully. Audio transcription is implemented, but activation still depends on available OpenAI API billing credits; it should not be treated as a currently verified live feature.
-- When available, audio transcription requires permission to process the recording. CoffeeLab sends audio to OpenAI without storing the original recording. Saved transcript text is retained in the workspace, and OpenAI's processing and retention terms still apply.
+- CoffeeLab is an early-access trial. Audio transcription, summaries, and email generation have passed real API tests using fictional test material; file-size and usage limits apply.
+- Audio transcription requires permission to process the recording. CoffeeLab sends audio to OpenAI without storing the original recording. Saved transcript text is retained in the workspace, and OpenAI's processing and retention terms still apply.
 - AI can miss or misinterpret details. Review extracted text, takeaways, names, dates, and drafts before relying on them.
 - Recruiting radar is a discovery aid, not an exhaustive job board. Confirm eligibility, availability, and deadlines on the linked employer page. Hourly scheduling does not guarantee that every profile refreshes every hour.
+
+## Where CoffeeLab is going
+
+**CRM first. Personalized job-search assistance next.**
+
+Our current priority is a dependable place to manage relationships, capture conversations, organize what you learn, and follow up thoughtfully.
+
+Planned directions include:
+
+- Better matching between your background, goals, and recruiting opportunities.
+- Resume-informed suggestions for relevant people and next steps, with clear reasons.
+- More personalized follow-up drafts grounded in actual conversations.
+- Larger audio uploads, speaker identification, and expanded storage.
+- More proactive help across the job-search process, while keeping you in control of outreach.
+
+These are product directions, not currently available agent features. Premium plans are planned as the product develops; the trial does not enroll users in a subscription.
 
 ## Author
 
