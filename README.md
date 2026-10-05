@@ -16,7 +16,7 @@ A recruiting CRM for students turning coffee chats into lasting professional con
 
 Looking for the original prototype documentation? See [the archived prototype README](docs/prototype-setup.md).
 
-**Hosted release:** Version 21, published October 5, 2026, now available at **coffeelab.space**. This portfolio walkthrough reflects that release; the public prototype source is not a mirror of the production application.
+**Hosted release:** Version 24, published October 5, 2026, now available at **coffeelab.space**. This portfolio walkthrough reflects that release; the public prototype source is not a mirror of the production application.
 
 ## The problem
 
@@ -70,19 +70,19 @@ The public introduction page includes **Give us feedback** links in its header, 
 
 ## Current hosted architecture
 
-The live application uses React and TypeScript, Next.js routing through Vinext/Vite, tRPC, Cloudflare D1, and OpenAI. ChatGPT sign-in is provided through OpenAI Sites.
+The live application uses React and TypeScript, Next.js routing through Vinext/Vite, tRPC, Supabase PostgreSQL, and OpenAI. ChatGPT sign-in is provided through OpenAI Sites.
 
 ```mermaid
 flowchart LR
     User[Student] --> UI[React workspace]
     Auth[ChatGPT sign-in] --> API[Protected server routes]
     UI --> API
-    API --> DB[(Cloudflare D1)]
+    API --> DB[(Supabase PostgreSQL)]
     API --> AI[OpenAI text, audio, and web search]
     Refresh[Hourly cloud task] --> API
 ```
 
-Protected routes scope records to the signed-in user. D1 persists profiles, contacts, saved transcript text, takeaways, drafts, and recruiting caches. Server-side usage limits bound AI requests. Failed analysis preserves previous takeaways, and failed recruiting refreshes preserve existing results.
+Protected routes scope records to the signed-in user. Database access is server-only; application tables have row-level security enabled and deny direct access to public/client keys. Supabase persists profiles, contacts, saved transcript text, takeaways, drafts, and recruiting caches. Transactional server-side usage limits bound AI requests. The migration preserves existing accounts, conversations and notes without changing the ChatGPT sign-in flow. Failed analysis preserves previous takeaways, and failed recruiting refreshes preserve existing results.
 
 ChatGPT sign-in identifies the user; it does not supply the user's API balance. AI processing uses the deployment operator's server-side OpenAI credentials. Application limits count requests, rather than guaranteeing a fixed dollar budget. API keys, production user records, and private deployment configuration are not published in this repository.
 
